@@ -125,3 +125,9 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+node_modules
+artifacts/build-info
+package-lock.json
+deploy.tar
+test01.js
+.gitignore.swp
