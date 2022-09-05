@@ -142,7 +142,7 @@ const reloadEventsFromBlockchain = async () => {
     // Now loop each received event that is stored in array and insert in db if not present
     for (const element of allEvents) {
       if (element.event === 'BuyEggs' || element.event === 'HatchEggs' || element.event === 'SellEggs') {
-        let message, data
+        let message, dataString, dataFloat, data
         const eventDate = await utils.getIntFromHex(element.args.timestamp).then((r) => {
           const date = new Date(r * 1000)
           return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds()
@@ -152,7 +152,9 @@ const reloadEventsFromBlockchain = async () => {
         const from = element.args._from
         switch (element.event) {
           case 'BuyEggs':
-            data = await ethers.utils.formatEther(element.args._amount)
+            dataString = await ethers.utils.formatEther(element.args._amount)
+            dataFloat = parseFloat(dataString).toFixed(2)
+            data = dataFloat.toString()
             message = `=> ${eventDate} || ${from} has bought ${data}`
             break
           case 'HatchEggs':
@@ -160,19 +162,21 @@ const reloadEventsFromBlockchain = async () => {
             message = `=> ${eventDate} || ${from} has hatched ${data}`
             break
           case 'SellEggs':
-            data = await ethers.utils.formatEther(element.args._eggsValues)
+            dataString = await ethers.utils.formatEther(element.args._eggsValues)
+            dataFloat = parseFloat(dataString).toFixed(2)
+            data = dataFloat.toString()
             message = `=> ${eventDate} || ${from} has sold ${data}`
             break
         }
         console.log(message)
 
         // Add record to database if not already added
-        const r = await db.isEventInDatabase(timestamp, eventType, from, data)
+        const r = await db.isEventInDatabase(from, data, element.transactionHash)
         if (r === true) {
           console.log('=> Record already exists.')
         } else {
           console.log('=> Record not found in db, now adding.')
-          await db.insertEvent(element.transactionHash, timestamp, eventType, from, data)
+          await db.insertEvent(timestamp, eventType, from, data, element.transactionHash, contract.coinName)
           console.log('=> Inserted.')
         }
         console.log('')
@@ -196,7 +200,9 @@ const eventsListenter = async () => {
   // Event: BuyEggs
   contract.instance.on('BuyEggs', async (_timestamp, _from, _amount, event) => {
     // Convert Wei to Eth
-    const ethValue = await ethers.utils.formatEther(_amount)
+    const ethValueString = await ethers.utils.formatEther(_amount)
+    const ethFloat = parseFloat(ethValueString).toFixed(2)
+    const ethValue = ethFloat.toString()
 
     // Log info
     console.log('---------------------------------------------------------------------------------------------------------------')
@@ -204,14 +210,16 @@ const eventsListenter = async () => {
     console.log('---------------------------------------------------------------------------------------------------------------')
 
     // Insert event
-    await db.insertEvent(event.transactionHash, _timestamp, 'BuyEggs', _from, ethValue)
+    await db.insertEvent(_timestamp, 'BuyEggs', _from, ethValue, event.transactionHash, contract.coinName)
   })
   console.log('=> OK - RPC: BuyEggs')
 
   // Event: SellEggs
   contract.instance.on('SellEggs', async (_timestamp, _from, _eggsValues, event) => {
     // Convert Wei to Eth
-    const ethValue = await ethers.utils.formatEther(_eggsValues)
+    const ethValueString = await ethers.utils.formatEther(_eggsValues)
+    const ethFloat = parseFloat(ethValueString).toFixed(2)
+    const ethValue = ethFloat.toString()
 
     // Log info
     console.log('---------------------------------------------------------------------------------------------------------------')
@@ -219,7 +227,7 @@ const eventsListenter = async () => {
     console.log('---------------------------------------------------------------------------------------------------------------')
 
     // Insert event
-    await db.insertEvent(event.transactionHash, _timestamp, 'SellEggs', _from, ethValue)
+    await db.insertEvent(_timestamp, 'SellEggs', _from, ethValue, event.transactionHash, contract.coinName)
 
   })
   console.log('=> OK - RPC: SellEggs')
@@ -232,7 +240,7 @@ const eventsListenter = async () => {
     console.log('---------------------------------------------------------------------------------------------------------------')
 
     // Insert event
-    await db.insertEvent(event.transactionHash, _timestamp, 'HatchEggs', _from, _newMiners)
+    await db.insertEvent(_timestamp, 'HatchEggs', _from, _newMiners, event.transactionHash, contract.coinName)
 
   })
   console.log('=> OK - RPC: HatchEggs')

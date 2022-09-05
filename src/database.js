@@ -86,9 +86,9 @@ class Database {
   * @param {string} address     - User address
   * @param {float}  value       - Value converted to ETH
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  isEventInDatabase = (timestamp, eventType, address, value, txHash) => {
+  isEventInDatabase = (address, value, txHash) => {
     return new Promise((resolve) => {
-      this.connector.execute('SELECT * FROM events WHERE timestamp = ? AND eventType = ? AND address = ? AND value = ?', [timestamp, eventType, address, value], (err, results) => {
+      this.connector.execute('SELECT * FROM events WHERE address = ? AND value = ? AND txHash = ?', [address, value, txHash], (err, results) => {
         // eslint-disable-next-line prefer-promise-reject-errors
         if (err) this.throwExitError(err)
         if (this.config.debug) console.log('++isEventInDatabase: ', results)
@@ -108,7 +108,7 @@ class Database {
   * @param    {string}  txHash      - Transaction hash
   * @returns  {boolean}             - True if inserted || False if not inserted (present)
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  insertEvent = (timestamp, eventType, address, value, txHash) => {   
+  insertEvent = (timestamp, eventType, address, value, txHash, coinName) => {   
     return new Promise((resolve, reject) => {
       // Debug
       if (this.config.debug) console.log('++insertEvent')
@@ -126,7 +126,7 @@ class Database {
         if (this.config.debug) console.log('++insertEvent: Inserting... ')
 
         // Insert Event
-        this.connector.execute('INSERT INTO events (timestamp, eventType, address, value, txHash) VALUES(?, ?, ?, ?, ?)',[timestamp, eventType, address, value, txHash], (err, results) => {
+        this.connector.execute('INSERT INTO events (timestamp, eventType, address, value, txHash, coinName) VALUES(?, ?, ?, ?, ?, ?)',[timestamp, eventType, address, value, txHash, coinName], (err, results) => {
           // Exit process on error
           if (err) this.throwExitError(err)
           // Debug
