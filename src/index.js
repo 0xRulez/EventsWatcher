@@ -26,14 +26,16 @@ const contract = {
   coinName: coinDetails.coinName,
   instance: undefined,
 }
-
+const consoleInfo = utils.consoleInfo
+const TColorInfo = utils.TColors.BgCyan
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  API Entry Point
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 async function starter () {
 
   // INFO Message
-  console.log('INFO: Starting EventsWatcher for coin: ' + contract.coinName + '\n')
+  //consoleInfo( 'INFO: Starting EventsWatcher for coin: ' + contract.coinName + '\n')
+  consoleInfo('INFO: Starting EventsWatcher for coin: ' + contract.coinName + '', TColorInfo, true)
 
   // Create new instance
   db = new Database(config)
@@ -59,7 +61,7 @@ async function starter () {
 // MEM: Reload accounts from database into global variable
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 const loadEventsToMemory = async () => {
-  console.log('INFO: Loading events to memory')
+  consoleInfo('INFO: Loading events to memory', TColorInfo, true)
   listOfAccounts = await db.fetchEvents()
   if (listOfAccounts.length === 0) { console.log('=> No accounts in database'); return }
   console.log('=> Events successfully loaded')
@@ -75,7 +77,7 @@ const loadEventsToMemory = async () => {
 // BLOCKCHAIN: Setup RPC & Contract
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 const setupWeb3 = async () => {
-  console.log('INFO: Web3 RPC is initializing.')
+  consoleInfo('INFO: Web3 RPC is initializing.', TColorInfo)
   try {
     // Setup JSON RPC Provider
     blockchain = new ethers.providers.JsonRpcProvider(network.rpc)
@@ -97,7 +99,7 @@ const setupWeb3 = async () => {
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 const reloadEventsFromBlockchain = async () => {
   try {
-    console.log('INFO: Reloading events from blockchain')
+    consoleInfo('INFO: Reloading events from blockchain', TColorInfo)
 
     // Starting block is contract deploy transaction
     const startBlock = await blockchain.send('eth_getTransactionReceipt', [contract.deployTx]).then(async (r) => await utils.getIntFromHex(r.blockNumber))
@@ -136,20 +138,17 @@ const reloadEventsFromBlockchain = async () => {
     // Log info
     console.log('=> END')
     console.log('')
-    console.log('INFO: Syncing with db. ')
-    console.log('')
+    consoleInfo('INFO: Syncing with db.', TColorInfo)
 
     // Now loop each received event that is stored in array and insert in db if not present
     for (const element of allEvents) {
-      if (element.event === 'BuyEggs' || element.event === 'HatchEggs' || element.event === 'SellEggs') {
-        let message, data
-        const eventDate = await utils.getIntFromHex(element.args.timestamp).then((r) => {
-          const date = new Date(r * 1000)
-          return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds()
-        })
-        const timestamp = await utils.getIntFromHex(element.args.timestamp)
-        const eventType = element.event
-        const from = element.args._from
+      const eventType = element.event
+      if (eventType === 'BuyEggs' || eventType === 'HatchEggs' || eventType === 'SellEggs' || eventType === 'ReceivedFromLottery') {
+        let message, data, from = 'NULL'
+        const eventDate = await utils.getEventDate(element.args._timestamp)
+        const timestamp = await utils.getIntFromHex(element.args._timestamp)
+        
+        if (eventType === 'BuyEggs' || eventType === 'HatchEggs' || eventType === 'SellEggs') from = element.args._from
         switch (element.event) {
           case 'BuyEggs':
             data = await ethers.utils.formatEther(element.args._amount)
@@ -163,6 +162,9 @@ const reloadEventsFromBlockchain = async () => {
             data = await ethers.utils.formatEther(element.args._eggsValues)
             message = `=> ${eventDate} || ${from} has sold ${data}`
             break
+          case 'ReceivedFromLottery':
+            data = await ethers.utils.formatEther(element.args._lotteryValue)
+            message = `=> ${eventDate} || received ${data} from lottery`
         }
         console.log(message)
 
@@ -191,7 +193,7 @@ const reloadEventsFromBlockchain = async () => {
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 const eventsListenter = async () => {
 
-  console.log('INFO: Event Listeners are initializing')
+  consoleInfo('INFO: Event Listeners are initializing', TColorInfo)
 
   // Event: BuyEggs
   contract.instance.on('BuyEggs', async (_timestamp, _from, _amount, event) => {
@@ -236,6 +238,21 @@ const eventsListenter = async () => {
 
   })
   console.log('=> OK - RPC: HatchEggs')
+
+  // Event: ReceivedFromLottery
+  contract.instance.on('ReceivedFromLottery', async (_timestamp, _lotteryValue , event) => {
+    const ethValue = await ethers.utils.formatEther(_lotteryValue)
+    const realDate = await utils.getEventDate(_timestamp)
+    // Log info
+    console.log('---------------------------------------------------------------------------------------------------------------')
+    console.log(`(!) ReceivedFromLottery Event [${realDate}] received ${ethValue} ${contract.coinName} from lottery`)
+    console.log('---------------------------------------------------------------------------------------------------------------')
+
+    // Insert event
+    await db.insertEvent(event.transactionHash, _timestamp, 'ReceivedFromLottery', 'NULL', _lotteryValue)
+
+  })
+  console.log('=> OK - RPC: ReceivedFromLottery')
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

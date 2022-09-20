@@ -9,6 +9,7 @@ import fs from 'fs'
 import { exit } from 'process'
 import sqlite3 from 'sqlite3'
 import mysql from 'mysql2'
+import Utils from './utils.js'
 
 class Database {
 
@@ -18,6 +19,8 @@ class Database {
   constructor (config) {
     this.config = config          // Include global config
     this.connector = undefined    // MySQL connector
+    this.utils = new Utils()
+    this.consoleInfo = this.utils.consoleInfo
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
@@ -26,7 +29,7 @@ class Database {
   openDatabase = async () => {
     return new Promise((resolve, reject) => {
       try {
-        console.log('INFO: MySQL database is initializing...')
+        this.consoleInfo('INFO: MySQL database is initializing...', this.utils.TColors.BgCyan)
         this.connector = mysql.createConnection({
           host: this.config.database.host,
           user: this.config.database.username,
@@ -108,7 +111,7 @@ class Database {
   * @param    {string}  txHash      - Transaction hash
   * @returns  {boolean}             - True if inserted || False if not inserted (present)
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  insertEvent = (timestamp, eventType, address, value, txHash) => {   
+  insertEvent = (txHash, timestamp, eventType, address, value, ) => {   
     return new Promise((resolve, reject) => {
       // Debug
       if (this.config.debug) console.log('++insertEvent')

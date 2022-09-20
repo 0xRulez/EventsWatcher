@@ -2,7 +2,7 @@
 import { exit } from 'process'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
-const JSON_BNB_MINER = require('../artifacts/contracts/BNBMiner.sol/BoiledNoodlesBNB.json')
+const JSON_BNB_MINER = require('../artifacts/contracts/BNBMiner.sol/SpaceDiamondBNB.json')
 //    ____             __ _       
 //   / ___|___  _ __  / _(_) __ _ 
 //  | |   / _ \| '_ \| |_| |/ _` |
@@ -13,7 +13,7 @@ const JSON_BNB_MINER = require('../artifacts/contracts/BNBMiner.sol/BoiledNoodle
 class Configuration {
   constructor () {
     // Select Enviroment for the project
-    this.currentEnviroment = 'prod'
+    this.currentEnviroment = 'dev'
 
     // Configuration Object
     this.config = {
@@ -58,7 +58,7 @@ class Configuration {
       },
 
       dev: {
-        debug: true,
+        debug: false,
         database: {
           host: '192.168.1.90',
           name: 'blockApp01',
@@ -68,14 +68,14 @@ class Configuration {
         },
         network: {
           name: 'Binance Smart Chain (Testnet)',
-          rpc: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+          rpc: 'https://solitary-solitary-shadow.bsc-testnet.discover.quiknode.pro/9cf56d03899187991fa9ceb4b15fc2b30a74a941/',
           scanURL: 'https://testnet.bscscan.com',
         },
         contracts: {
           BNB: {
-            name: 'BoiledNoodlesBNB',
-            address: '0xC2d1FfBECeB9CEE0ba12DCb527B5FC147258B1Bc',
-            deployTx: '',
+            name: 'SpaceDiamondBNB',
+            address: '0x364adc518c767C917cA7Bd45028C0D7D56abEe37',
+            deployTx: '0xf81f040394b98d3a9c37406f8479ae5a0a41108baca5e98e007a7ff16e2cd23e',
             json: JSON_BNB_MINER,
             coinName: 'BNB'
           },
