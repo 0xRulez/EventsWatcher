@@ -4,41 +4,29 @@
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 import { exit } from 'process'
 import { ethers } from 'ethers'
-
 import Utils from './utils.js'
 import Database from './database.js'
-import Configuration from './config.js'
+const utils = new Utils()
+
+const consoleInfo = utils.consoleInfo
+
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Global Variables
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-let listOfEvents, db, blockchain
-const Config = new Configuration()
-const config = Config.getConfig()
-const utils = new Utils()
-const network = config.network
-const coinDetails = Config.getContract(process.argv[2])
-const contract = {
-  name: coinDetails.name,
-  address: coinDetails.address,
-  deployTx: coinDetails.deployTx,
-  json: coinDetails.json,
-  coinName: coinDetails.coinName,
-  instance: undefined,
-}
-const consoleInfo = utils.consoleInfo
-const TColorInfo = utils.TColors.BgCyan
+let db, blockchain
+const network = utils.getNetwork()
+const contract = utils.getContract(utils.args[1])
+
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
-//  API Entry Point
+//  Entry Point
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 async function starter () {
-
-  // INFO Message
-  //consoleInfo( 'INFO: Starting EventsWatcher for coin: ' + contract.coinName + '\n')
-  consoleInfo('INFO: Starting EventsWatcher for coin: ' + contract.coinName + '', TColorInfo, true)
+  // Welcome message
+  utils.welcomeMessage()
 
   // Create new instance
-  db = new Database(config)
+  db = new Database()
 
   // Open database
   await db.openDatabase()
@@ -52,22 +40,6 @@ async function starter () {
   })
 }
 
-// ____           _             __  __
-// / ___|__ _  ___| |__   ___   |  \/  | ___ _ __ ___
-// | |   / _` |/ __| '_ \ / _ \ | |\/| |/ _ \ '_ ` _ \
-// | |__| (_| | (__| | | |  __/ | |  | |  __/ | | | | |
-// \____\__,_|\___|_| |_|\___|  |_|  |_|\___|_| |_| |_|
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// MEM: Reload accounts from database into global variable
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-const loadEventsToMemory = async () => {
-  consoleInfo('INFO: Loading events to memory', TColorInfo, true)
-  listOfAccounts = await db.fetchEvents()
-  if (listOfAccounts.length === 0) { console.log('=> No accounts in database'); return }
-  console.log('=> Events successfully loaded')
-  console.log('')
-}
-
 // ____  _            _        _           _
 // | __ )| | ___   ___| | _____| |__   __ _(_)_ __
 // |  _ \| |/ _ \ / __| |/ / __| '_ \ / _` | | '_ \
@@ -77,7 +49,7 @@ const loadEventsToMemory = async () => {
 // BLOCKCHAIN: Setup RPC & Contract
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 const setupWeb3 = async () => {
-  consoleInfo('INFO: Web3 RPC is initializing.', TColorInfo)
+  consoleInfo('INFO: Web3 RPC is initializing.', false)
   try {
     // Setup JSON RPC Provider
     blockchain = new ethers.providers.JsonRpcProvider(network.rpc)
@@ -90,7 +62,7 @@ const setupWeb3 = async () => {
     console.log('=> Connected successfully\n')
   }
   catch (e) {
-    console.log(e); exit(1)
+    console.log(`ERROR while Web3 Setup. Check correct RPC / ABI / Contract Address in configuration\n\n`, e); exit(1)
   }
   return true
 }
@@ -99,7 +71,7 @@ const setupWeb3 = async () => {
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 const reloadEventsFromBlockchain = async () => {
   try {
-    consoleInfo('INFO: Reloading events from blockchain', TColorInfo)
+    consoleInfo('INFO: Reloading events from blockchain')
 
     // Starting block is contract deploy transaction
     const startBlock = await blockchain.send('eth_getTransactionReceipt', [contract.deployTx]).then(async (r) => await utils.getIntFromHex(r.blockNumber))
@@ -138,17 +110,20 @@ const reloadEventsFromBlockchain = async () => {
     // Log info
     console.log('=> END')
     console.log('')
-    consoleInfo('INFO: Syncing with db.', TColorInfo)
+    consoleInfo('INFO: Syncing with db.')
 
     // Now loop each received event that is stored in array and insert in db if not present
     for (const element of allEvents) {
       const eventType = element.event
+      const txHash = element.transactionHash
+
+      // Pick only wanted events
       if (eventType === 'BuyEggs' || eventType === 'HatchEggs' || eventType === 'SellEggs' || eventType === 'ReceivedFromLottery') {
         let message, data, from = 'NULL'
         const eventDate = await utils.getEventDate(element.args._timestamp)
         const timestamp = await utils.getIntFromHex(element.args._timestamp)
-        
         if (eventType === 'BuyEggs' || eventType === 'HatchEggs' || eventType === 'SellEggs') from = element.args._from
+
         switch (element.event) {
           case 'BuyEggs':
             data = await ethers.utils.formatEther(element.args._amount)
@@ -193,7 +168,7 @@ const reloadEventsFromBlockchain = async () => {
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 const eventsListenter = async () => {
 
-  consoleInfo('INFO: Event Listeners are initializing', TColorInfo)
+  consoleInfo('INFO: Event Listeners are initializing')
 
   // Event: BuyEggs
   contract.instance.on('BuyEggs', async (_timestamp, _from, _amount, event) => {

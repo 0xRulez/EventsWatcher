@@ -17,10 +17,9 @@ class Database {
   / Constructor
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   constructor (config) {
-    this.config = config          // Include global config
-    this.connector = undefined    // MySQL connector
     this.utils = new Utils()
-    this.consoleInfo = this.utils.consoleInfo
+    this.config = this.utils.getMySQLConfig()       // Include global config
+    this.connector = undefined                      // MySQL connector
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
@@ -29,7 +28,7 @@ class Database {
   openDatabase = async () => {
     return new Promise((resolve, reject) => {
       try {
-        this.consoleInfo('INFO: MySQL database is initializing...', this.utils.TColors.BgCyan)
+        this.utils.consoleInfo('INFO: MySQL database is initializing...')
         this.connector = mysql.createConnection({
           host: this.config.database.host,
           user: this.config.database.username,
@@ -38,7 +37,7 @@ class Database {
         })
         console.log('=> Connected successfully\n')
         resolve(true)
-      } 
+      }
       catch (e) {
         console.log('=> MySQL ERROR!')
         console.log(e)

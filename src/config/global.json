@@ -1,0 +1,71 @@
+
+{
+    "debug": "false",
+    "mysql": {
+        "prod": {
+            "database": {
+                "host": "192.168.1.90",
+                "name": "blockApp01",
+                "username": "blockApp01",
+                "password": "kYPiKz1YMSr5bqkw.",
+                "port": "3306"
+            }
+        },
+        "dev": {
+            "database": {
+                "host": "192.168.1.90",
+                "name": "blockApp01",
+                "username": "blockApp01",
+                "password": "kYPiKz1YMSr5bqkw.",
+                "port": "3306"
+            }
+        }
+    },
+    "networks": {
+        "BSC_Mainnet": {
+            "name": "Binance Smart Chain (Mainnet)",
+            "rpc": "https://greatest-proportionate-gadget.bsc.discover.quiknode.pro/ce66e7bd0f8150d11d18423ece92d5287b176573/",
+            "scanURL": "https://www.bscscan.com",
+            "contracts": {
+                "BNB": {
+                    "name": "BoiledNoodlesBNB",
+                    "address": "0xC2d1FfBECeB9CEE0ba12DCb527B5FC147258B1Bc",
+                    "deployTx": "0xdc9066c2e779f3c43de06806d90e74636a92a49a34104e8d530a28e466aa5dbf",
+                    "json": "",
+                    "coinName": "BNB",
+                    "internal": {
+                        "instance": ""
+                    }
+                },
+                "BUSD": {
+                    "name": "BoiledNoodlesBUSD",
+                    "address": "0xC2d1FfBECeB9CEE0ba12DCb527B5FC147258B1Bc",
+                    "deployTx": "0xdc9066c2e779f3c43de06806d90e74636a92a49a34104e8d530a28e466aa5dbf",
+                    "json": "",
+                    "coinName": "BUSD",
+                    "internal": {
+                        "instance": ""
+                    }
+                },
+                "ETH": {
+                    "name": "BoiledNoodlesETH",
+                    "address": "0xC2d1FfBECeB9CEE0ba12DCb527B5FC147258B1Bc",
+                    "deployTx": "0xdc9066c2e779f3c43de06806d90e74636a92a49a34104e8d530a28e466aa5dbf",
+                    "json": "",
+                    "coinName": "ETH",
+                    "internal": {
+                        "instance": ""
+                    }
+                }
+            }
+        },
+        "BSC_Testnet": {
+            "name": "Binance Smart Chain (Testnet)",
+            "rpc": "https://solitary-solitary-shadow.bsc-testnet.discover.quiknode.pro/9cf56d03899187991fa9ceb4b15fc2b30a74a941/",
+            "scanURL": "https://testnet.bscscan.com",
+            "contracts": {
+                
+            }
+        }
+    }
+}

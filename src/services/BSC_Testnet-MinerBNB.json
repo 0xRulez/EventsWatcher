@@ -1,0 +1,14 @@
+{
+    "type": "miner",
+    "contract": {
+        "name": "BoiledNoodlesBNB",
+        "address": "0x259B191626C806048E0BDe49b1e0a1c8763ad851",
+        "deployTx": "0x3d0054b92b05627a80d4917f672d4327dd7c5cecc5a6beb9784707b7dcf7f633",
+        "coinName": "BNB",
+        "pathToAbi": "./config/artifacts/miners/BNB.json",
+        "json": "",
+        "internal": {
+            "instance": ""
+        }
+    }
+}
