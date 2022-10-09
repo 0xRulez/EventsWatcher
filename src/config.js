@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url)
 const globalCfg = require('./config/global.json')
 
 class Configuration {
-  constructor(cfgPath, securityChecksBeforeStart) {
+  constructor(_serviceCfg, _securityChecksBeforeStart) {
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     //    ____             __ _       
     //   / ___|___  _ __  / _(_) __ _ 
@@ -18,17 +18,19 @@ class Configuration {
     this.currentEnviroment = 'dev'
     this.currentNetwork = 'BSC_Testnet'
     this.numberOfArguments = 1
-    securityChecksBeforeStart(this.numberOfArguments)
+    _securityChecksBeforeStart(this.numberOfArguments)
     
-    this.cfg = require(cfgPath)
-    this.coinName = this.cfg.contract.coinName
-    this.contractJson = require(this.cfg.contract.pathToAbi)
+    // Global cfg
     this.globalCfg = globalCfg
 
+    // Service cfg
+    this.serviceCfg = require(_serviceCfg)
+
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-    // Fill json matching with selected network & coin
+    // Fill json matching serviceCfg
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-    this.globalCfg.networks[this.currentNetwork].contracts[this.coinName].json = this.contractJson.abi
+    console.log(this.serviceCfg)
+    this.serviceCfg.contract.json = require(this.serviceCfg.contract.pathToAbi)
   }
 }
 
