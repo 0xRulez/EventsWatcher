@@ -5,21 +5,19 @@
 // | |_| | | (_| | | |_  | (_| | | |_) | | (_| | \__ \ |  __/
 // |____/   \__,_|  \__|  \__,_| |_.__/   \__,_| |___/  \___|
 
-import fs from 'fs'
 import { exit } from 'process'
-import sqlite3 from 'sqlite3'
 import mysql from 'mysql2'
-import Utils from './utils.js'
 
 class Database {
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / Constructor
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
-  constructor (config) {
-    this.utils = new Utils()
-    this.config = this.utils.getMySQLConfig()       // Include global config
-    this.connector = undefined                      // MySQL connector
+  constructor (_utils) {
+    this.utils = _utils
+    this.config = this.utils.getMySQLConfig()                              // Include global mysql config
+    this.tableName = this.utils.config.serviceCfg.database.tableName       // Table name
+    this.connector = undefined                                             // MySQL connector
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
@@ -57,9 +55,9 @@ class Database {
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / DB: Fetch All Events
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
-  fetchEvents = async () => {
+  fetchAllEvents = async () => {
     return new Promise((resolve) => {
-      this.connector.query('SELECT * FROM events ORDER BY timestamp DESC;', (err, results) => {
+      this.connector.query(`SELECT * FROM ${this.tableName} ORDER BY timestamp DESC;`, (err, results) => {
         if (err) this.throwExitError(err)
         if (this.config.debug) console.log('++fetchEvents: ', results)
         resolve(results)
@@ -72,7 +70,7 @@ class Database {
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   fetchLastEvents = async () => {
     return new Promise((resolve) => {
-      this.connector.query('SELECT * FROM events ORDER BY timestamp DESC LIMIT 4;', (err, results) => {
+      this.connector.query(`SELECT * FROM ${this.tableName} ORDER BY timestamp DESC LIMIT 4;`, (err, results) => {
         if (err) this.throwExitError(err)
         if (this.config.debug) console.log('++fetchEvents: ', results)
         resolve(results)
@@ -88,9 +86,9 @@ class Database {
   * @param {string} address     - User address
   * @param {float}  value       - Value converted to ETH
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  isEventInDatabase = (timestamp, eventType, address, value, txHash) => {
+  isEventInDatabase = (timestamp, txHash, type) => {
     return new Promise((resolve) => {
-      this.connector.execute('SELECT * FROM events WHERE timestamp = ? AND eventType = ? AND address = ? AND value = ?', [timestamp, eventType, address, value], (err, results) => {
+      this.connector.execute(`SELECT * FROM ${this.tableName} WHERE timestamp = UNIX_TIMESTAMP(?) AND type = ? AND txHash = ?`, [timestamp, eventType, address, value], (err, results) => {
         // eslint-disable-next-line prefer-promise-reject-errors
         if (err) this.throwExitError(err)
         if (this.config.debug) console.log('++isEventInDatabase: ', results)
@@ -104,19 +102,18 @@ class Database {
   / DB: Insert Event
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   * @param    {number}  timestamp   - Datetime
-  * @param    {string}  eventType   - Event type
-  * @param    {string}  address     - User address
-  * @param    {float}   value       - Value converted to ETH
   * @param    {string}  txHash      - Transaction hash
+  * @param    {string}  type        - Event type
+  * @param    {string}  data        - Event data
   * @returns  {boolean}             - True if inserted || False if not inserted (present)
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  insertEvent = (txHash, timestamp, eventType, address, value, ) => {   
+  insertEvent = ( timestamp, txHash, type, data ) => {
     return new Promise((resolve, reject) => {
       // Debug
       if (this.config.debug) console.log('++insertEvent')
 
       // Check if event is present
-      const r = this.isEventInDatabase(timestamp, eventType, address, value).then((isEventInDatabase) => {
+      const r = this.isEventInDatabase(timestamp, type, data).then((isEventInDatabase) => {
 
         // Resolve false if event is present
         if (isEventInDatabase) {          
@@ -128,7 +125,7 @@ class Database {
         if (this.config.debug) console.log('++insertEvent: Inserting... ')
 
         // Insert Event
-        this.connector.execute('INSERT INTO events (timestamp, eventType, address, value, txHash) VALUES(?, ?, ?, ?, ?)',[timestamp, eventType, address, value, txHash], (err, results) => {
+        this.connector.execute(`INSERT INTO ${this.tableName} (timestamp, txHash, type, data) VALUES(?, ?, ?, ?, ?)`,[timestamp, txHash, type, data], (err, results) => {
           // Exit process on error
           if (err) this.throwExitError(err)
           // Debug
