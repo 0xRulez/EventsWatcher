@@ -1,15 +1,17 @@
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 
-import Config from './config.js'
 import * as path from 'path'
 import { exit } from 'process'
 const fs = require('fs')
+import Config from './config.js'
+import Database from './database.js'
 
 class Utils {
     constructor() {
         this.args = ['', process.argv[2]]
         this.config = new Config(this.args[1], this.securityChecksBeforeStart)
+        this.db = new Database(this)
         this.colors = {
             defaultInfo: '\x1b[34m',
             end: '\x1b[0m',
@@ -72,7 +74,7 @@ class Utils {
     // Welcome message
     welcomeMessage = () => {
         const network = this.getNetwork()
-        const contract = this.getContract(this.args[1])
+        const contract = this.getService(this.args[1])
         console.log(`------------------------------------------------------------------------------------------------------------------------`)
         console.log(`${this.colors.fgGreen}(!) ${this.colors.fgGreen}Welcome to EventsWatcher-Miners${this.colors.end}`)
         console.log(`------------------------------------------------------------------------------------------------------------------------`)
@@ -154,14 +156,8 @@ class Utils {
         return this.config.globalCfg.networks[this.config.currentNetwork]
     }
     // Gets project current selected contract
-    getContract = (coinName) => {
-        const network = this.getNetwork()
-        console.log(network)
-        if (this.doesItemExistInArray(coinName, network.contracts) === false) {
-            console.log(`ERROR: Selected coin "${coinName}" does not exist`)
-            exit(1)
-        }
-        return network.contracts[coinName]
+    getService = (coinName) => {       
+        return this.config.serviceCfg
     }
 }
 
