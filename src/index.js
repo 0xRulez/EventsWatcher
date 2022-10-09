@@ -5,18 +5,17 @@
 import { exit } from 'process'
 import { ethers } from 'ethers'
 import Utils from './utils.js'
-import Database from './database.js'
 const utils = new Utils()
 
 const consoleInfo = utils.consoleInfo
-
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Global Variables
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 let db, blockchain
 const network = utils.getNetwork()
-const contract = utils.getContract(utils.args[1])
+const service = utils.getService()
+const contract = service.contract
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Entry Point
@@ -25,11 +24,8 @@ async function starter () {
   // Welcome message
   utils.welcomeMessage()
 
-  // Create new instance
-  db = new Database()
-
   // Open database
-  await db.openDatabase()
+  await utils.db.openDatabase()
 
   // Setup RPC & Contract
   await setupWeb3()
@@ -144,12 +140,12 @@ const reloadEventsFromBlockchain = async () => {
         console.log(message)
 
         // Add record to database if not already added
-        const r = await db.isEventInDatabase(timestamp, eventType, from, data)
+        const r = await utils.db.isEventInDatabase(timestamp, eventType, from, data)
         if (r === true) {
           console.log('=> Record already exists.')
         } else {
           console.log('=> Record not found in db, now adding.')
-          await db.insertEvent(element.transactionHash, timestamp, eventType, from, data)
+          await utils.db.insertEvent(element.transactionHash, timestamp, eventType, from, data)
           console.log('=> Inserted.')
         }
         console.log('')
@@ -181,7 +177,7 @@ const eventsListenter = async () => {
     console.log('---------------------------------------------------------------------------------------------------------------')
 
     // Insert event
-    await db.insertEvent(event.transactionHash, _timestamp, 'BuyEggs', _from, ethValue)
+    await utils.db.insertEvent(event.transactionHash, _timestamp, 'BuyEggs', _from, ethValue)
   })
   console.log('=> OK - RPC: BuyEggs')
 
@@ -196,7 +192,7 @@ const eventsListenter = async () => {
     console.log('---------------------------------------------------------------------------------------------------------------')
 
     // Insert event
-    await db.insertEvent(event.transactionHash, _timestamp, 'SellEggs', _from, ethValue)
+    await utils.db.insertEvent(event.transactionHash, _timestamp, 'SellEggs', _from, ethValue)
 
   })
   console.log('=> OK - RPC: SellEggs')
@@ -209,7 +205,7 @@ const eventsListenter = async () => {
     console.log('---------------------------------------------------------------------------------------------------------------')
 
     // Insert event
-    await db.insertEvent(event.transactionHash, _timestamp, 'HatchEggs', _from, _newMiners)
+    await utils.db.insertEvent(event.transactionHash, _timestamp, 'HatchEggs', _from, _newMiners)
 
   })
   console.log('=> OK - RPC: HatchEggs')
@@ -224,7 +220,7 @@ const eventsListenter = async () => {
     console.log('---------------------------------------------------------------------------------------------------------------')
 
     // Insert event
-    await db.insertEvent(event.transactionHash, _timestamp, 'ReceivedFromLottery', 'NULL', _lotteryValue)
+    await utils.db.insertEvent(event.transactionHash, _timestamp, 'ReceivedFromLottery', 'NULL', _lotteryValue)
 
   })
   console.log('=> OK - RPC: ReceivedFromLottery')
