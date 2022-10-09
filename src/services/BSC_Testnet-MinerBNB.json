@@ -10,5 +10,8 @@
         "internal": {
             "instance": ""
         }
+    },
+    "database": {
+        "tableName": "minerEvents"
     }
 }
