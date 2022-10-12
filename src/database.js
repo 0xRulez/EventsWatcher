@@ -63,7 +63,7 @@ class Database {
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   insertEvent = async (timestamp, txHash, type, eventData) => {
     // Check if event is present
-    const isEventInDatabase = await this.isEventInDatabase(timestamp, txHash, type, eventData)
+    const isEventInDatabase = await this.isEventInDatabase(txHash, eventData)
     if (isEventInDatabase) {
       return false
     }
