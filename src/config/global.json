@@ -1,14 +1,13 @@
-
 {
-    "debug": "false",
     "mysql": {
         "prod": {
             "database": {
-                "host": "192.168.1.90",
-                "name": "blockApp01",
-                "username": "blockApp01",
-                "password": "kYPiKz1YMSr5bqkw.",
-                "port": "3306"
+                "host": "",
+                "name": "",
+                "username": "",
+                "password": "",
+                "port": "",
+                "debug": "false"
             }
         },
         "dev": {
@@ -17,7 +16,8 @@
                 "name": "blockApp01",
                 "username": "blockApp01",
                 "password": "kYPiKz1YMSr5bqkw.",
-                "port": "3306"
+                "port": "3306",
+                "debug": "false"
             }
         }
     },
@@ -63,9 +63,7 @@
             "name": "Binance Smart Chain (Testnet)",
             "rpc": "https://solitary-solitary-shadow.bsc-testnet.discover.quiknode.pro/9cf56d03899187991fa9ceb4b15fc2b30a74a941/",
             "scanURL": "https://testnet.bscscan.com",
-            "contracts": {
-                
-            }
+            "contracts": {}
         }
     }
 }

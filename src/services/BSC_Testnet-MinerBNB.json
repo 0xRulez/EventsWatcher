@@ -1,17 +1,18 @@
 {
     "type": "miner",
-    "contract": {
-        "name": "BoiledNoodlesBNB",
-        "address": "0x259B191626C806048E0BDe49b1e0a1c8763ad851",
-        "deployTx": "0x3d0054b92b05627a80d4917f672d4327dd7c5cecc5a6beb9784707b7dcf7f633",
-        "coinName": "BNB",
-        "pathToAbi": "./config/artifacts/miners/BNB.json",
-        "json": "",
-        "internal": {
-            "instance": ""
-        }
-    },
+    "networkName": "BSC_Testnet",
     "database": {
-        "tableName": "minerEvents"
+        "enviroment": "dev",
+        "tableName": "minersEvents"
+    },
+    "contract": {
+        "name": "MinerV1Native",
+        "address": "0x7FF26953AA6eA920C3E599f1c1c65cdCDF5D9dA1",
+        "deployTx": "0xf2d41372d9882bbe386185905026823cd3fd6d5d02b41bb8c41544f8a429a594",
+        "coinName": "BNB",
+        "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
+        "pathToAbi": "./config/artifacts/miners/MinerV1Native.json",
+        "json": "",
+        "internal": { "instance": "" }
     }
 }
