@@ -311,19 +311,20 @@ class Utils {
 
         // Fill up received events to array and keep going!
         allEvents = [...allEvents, ...events]
-        console.log(allEvents)
       }
       this.consoleSubInfo('FINISH')
       console.log('')
 
       // Now loop each received event that is stored in array and insert in db if not present
       this.consoleInfo(`INFO: Now syncing ${allEvents.length} events with db`)
+      let isEventAlreadyInDb = false
       let numberOfAddedEvents = 0
+      let i = 1
       for (const event of allEvents) {
         let found = false
         const eventType = event.event
         console.log('--------------------------------------------------------------------------------')
-        this.consoleSubInfo(`Event: ${eventType}`)
+        this.consoleSubInfo(`[${i++}/${allEvents.length}] Event: ${eventType}`)
         console.log('--------------------------------------------------------------------------------')
         // Now loop again each event, but this time we check against wanted events
         for (const wantedEvent of this.service.contract.wantedEvents.split(', ')) {
@@ -347,14 +348,15 @@ class Utils {
             // Check if event is inserted in database
             const isEventInDatabase = await this.db.isEventInDatabase(txHash, eventData)
             if (isEventInDatabase === true) {
-              this.consoleSubInfo('Record already exists.')
+              this.consoleSubInfo('Record already exists ✅')
+              isEventAlreadyInDb = true
               break
             }
 
             // Insert event cause its not present
-            this.consoleSubInfo('Record not found in db, now adding.')
+            this.consoleSubInfo('Record not found in db, now adding ❌')
             await this.db.insertEvent(txBlock.timestamp, txHash, eventType, eventData)
-            this.consoleSubInfo('Inserted.')
+            this.consoleSubInfo('Inserted ✅')
 
             // Finish
             console.log('--------------------------------------------------------------------------------')
@@ -365,9 +367,14 @@ class Utils {
         }
         // Its not a wanted event, so skipped
         if (found === false) {
-          this.consoleSubInfo('Skipping')
-          console.log('')
           found = false
+          if (isEventAlreadyInDb === false) {
+            this.consoleSubInfo('Skipping')
+            console.log('')
+            continue
+          }
+          isEventAlreadyInDb = false
+          console.log('')
         }
       }
       this.consoleSubInfo('Finished syncing with db')
