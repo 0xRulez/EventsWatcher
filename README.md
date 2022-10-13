@@ -2,4 +2,4 @@
 Blockchain Event Watcher (mysql)
 
 # Run
-node index.js <path to service cfg>
+node index.js \<path to service cfg\>
