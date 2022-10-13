@@ -24,7 +24,8 @@ class Database {
   openDatabase = async () => {
     try {
       this.utils.consoleInfo('INFO: MySQL database is initializing...')
-      this.connector = await mysql.createConnection({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
+      // this.connector = await mysql.createConnection({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
+      this.connector = await mysql.createPool({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
       this.utils.consoleSubInfo('Connected successfully\n')
     }
     catch (e) {
