@@ -19,6 +19,14 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
+  / DB: Throws the error and exit
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+  throwExitError = (e) => {
+    console.log('=> MySQL ERROR!' + e)
+    throw new Error(e)
+  }
+
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / DB: MySQL Open Connection
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   openDatabase = async () => {
@@ -27,6 +35,10 @@ class Database {
       // this.connector = await mysql.createConnection({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
       this.connector = await mysql.createPool({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
       this.utils.consoleSubInfo('Connected successfully\n')
+      if (this.doesTableExist(this.tableName) === false) {
+        this.utils.consoleSubInfo('tableName ' + this.tableName + ' does not exist')
+        exit(1)
+      }
     }
     catch (e) {
       throw new Error(e)
@@ -34,11 +46,12 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Throws the error and exit
+  / DB: MySQL Open Connection
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
-  throwExitError = (e) => {
-    console.log('=> MySQL ERROR!' + e)
-    throw new Error(e)
+  doesTableExist = async (tableName) => {
+    const [rows] = await this.connector.query('SELECT COUNT(TABLE_NAME) FROM information_schema.TABLES WHERE TABLE_SCHEMA LIKE ? AND TABLE_TYPE LIKE \'BASE TABLE\' AND TABLE_NAME = ?', [this.config.database.name, tableName])
+    if (rows.length === 0) return false
+    return true
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
