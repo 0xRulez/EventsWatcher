@@ -30,8 +30,7 @@
         "BSC_Testnet": {
             "name": "Binance Smart Chain (Testnet)",
             "rpc": "https://solitary-solitary-shadow.bsc-testnet.discover.quiknode.pro/9cf56d03899187991fa9ceb4b15fc2b30a74a941/",
-            "scanURL": "https://testnet.bscscan.com",
-            "contracts": {}
+            "scanURL": "https://testnet.bscscan.com"
         }
     }
 }
