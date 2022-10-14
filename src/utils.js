@@ -78,14 +78,14 @@ class Utils {
   // MISC: Welcome message
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   welcomeMessage = () => {
-    console.log('------------------------------------------------------------------------------------------------------------------------')
-    console.log(`${this.colors.fgGreen}(!) ${this.colors.fgGreen}Welcome to EventsWatcher-Miners${this.colors.end}`)
-    console.log('------------------------------------------------------------------------------------------------------------------------')
-    console.log(`${this.colors.fgGreen}(!) Network  => ${this.colors.end}${this.network.name}`)
-    console.log(`${this.colors.fgGreen}(!) RPC Node  => ${this.colors.end}${this.network.rpc}`)
-    console.log(`${this.colors.fgGreen}(!) Contract => ${this.colors.end}${this.service.contract.name}`)
-    console.log(`${this.colors.fgGreen}(!) Config   => ${this.colors.end}${this.config.databaseEnv}`)
-    console.log('------------------------------------------------------------------------------------------------------------------------')
+    console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher-Miners`)
+    console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) Network Name       => ${this.colors.end}${this.colors.fgCyan}${this.network.name}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgCyan}${this.network.rpc}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) Sel. Service       => ${this.colors.end}${this.colors.fgCyan}${this.service.contract.name}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) MySQL Enviroment   => ${this.colors.end}${this.colors.fgCyan}${this.config.databaseEnv}${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}-------------------------------------------------------------------------------------------------------------------------------------------`)
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -292,9 +292,12 @@ class Utils {
       let allEvents = []
 
       // Log some info
-      this.consoleSubInfo(`Contract TxId: ${this.contract.deployTx}`)
-      this.consoleSubInfo(`Contract Deployed @block: ${startBlock}`)
-      this.consoleSubInfo(`Syncing @block: ${endBlock}`)
+      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
+      this.consoleSubInfo(`Contract Address: ${this.contract.address}`)
+      this.consoleSubInfo(`TxId: ${this.contract.deployTx}`)
+      this.consoleSubInfo(`Deployed @block: ${startBlock}`)
+      this.consoleSubInfo(`Syncing to @block: ${endBlock}`)
+      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
 
       // Loop by requesting 10,000 blocks
       for (let i = startBlock; i < endBlock; i += 10000) {
@@ -313,6 +316,7 @@ class Utils {
         allEvents = [...allEvents, ...events]
       }
       this.consoleSubInfo('FINISH')
+      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
       console.log('')
 
       // Now loop each received event that is stored in array and insert in db if not present
@@ -473,8 +477,6 @@ class Utils {
     getFloatFromWeiHex = async (hex, decimals) => parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)  // eslint-disable-line
     getIntFromWeiHex = async (hex) => parseInt(ethers.utils.formatEther(hex))                      // eslint-disable-line
     getIntFromHex = (hex) => parseInt(hex)                                                // eslint-disable-line
-
-
 }
 
 export default Utils
