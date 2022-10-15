@@ -213,6 +213,13 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // BLOCKCHAIN: Common Blockchain Utils
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  getFloatFromWeiHex = async (hex, decimals) => parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)  // eslint-disable-line
+  getIntFromWeiHex = async (hex) => parseInt(ethers.utils.formatEther(hex))                      // eslint-disable-line
+  getIntFromHex = (hex) => parseInt(hex)       
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   //     ____             __ _
   //    / ___|___  _ __  / _(_) __ _
   //   | |   / _ \| '_ \| |_| |/ _` |
@@ -470,13 +477,6 @@ class Utils {
       this.consoleSubInfo(`OK - RPC: ${wantedEvent}`)
     }
   }
-
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // BLOCKCHAIN: Common Blockchain Utils
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-    getFloatFromWeiHex = async (hex, decimals) => parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)  // eslint-disable-line
-    getIntFromWeiHex = async (hex) => parseInt(ethers.utils.formatEther(hex))                      // eslint-disable-line
-    getIntFromHex = (hex) => parseInt(hex)                                                // eslint-disable-line
 }
 
 export default Utils
