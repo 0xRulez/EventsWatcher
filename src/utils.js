@@ -229,7 +229,6 @@ class Utils {
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   // CONFIG: Gets project current MySQL config
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
   getMySQLConfig = () => {
     // Check if enviroment exists in current mysql config and exits if it does not exist
     if (this.doesItemExistInArray(this.config.databaseEnv, this.config.globalCfg.mysql) === false) {
