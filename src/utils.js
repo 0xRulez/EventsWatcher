@@ -10,27 +10,6 @@ const fs = requires('fs')
 
 class Utils {
   constructor () {
-    // Terminal Arguments
-    this.args = ['', process.argv[2]]
-
-    // Config Class Object
-    this.config = new Config(this.args[1], this.securityChecksBeforeStart)
-
-    // Database Class Object
-    this.db = new Database(this)
-
-    // Empty Object, will be filled later
-    this.blockchain = undefined
-
-    // Network Config Object
-    this.network = this.getNetworkConfig()
-
-    // Service Config Object
-    this.service = this.getCurrentService()
-
-    // Contract Config Object
-    this.contract = this.service.contract
-
     // Terminal Colors
     this.colors = {
       defaultInfo: '\x1b[34m',
@@ -58,6 +37,28 @@ class Utils {
       bgCyan: '\x1b[46m',
       bgWhite: '\x1b[47m'
     }
+
+    // Terminal Arguments
+    this.args = ['', process.argv[2]]
+
+    // Config Class Object
+    this.config = new Config(this.args[1], this.securityChecksBeforeStart)
+
+    // Database Class Object
+    this.db = new Database(this)
+
+    // Empty Object, will be filled later
+    this.blockchain = undefined
+
+    // Network Config Object
+    this.network = this.getNetworkConfig()
+
+    // Service Config Object
+    this.service = this.getCurrentService()
+
+    // Contract Config Object
+    this.contract = this.service.contract
+
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -66,7 +67,6 @@ class Utils {
   // | |\/| || |/ __| / __|
   // | |  | || |\__ \| (__
   // |_|  |_||_||___/ \___|
-
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   // MISC: Gets project current selected contract
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
