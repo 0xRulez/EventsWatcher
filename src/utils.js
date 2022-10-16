@@ -58,7 +58,6 @@ class Utils {
 
     // Contract Config Object
     this.contract = this.service.contract
-
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -79,7 +78,7 @@ class Utils {
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   welcomeMessage = () => {
     console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
-    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher-Miners`)
+    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher `)
     console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) Network Name       => ${this.colors.end}${this.colors.fgCyan}${this.network.name}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgCyan}${this.network.rpc}${this.colors.end}`)
@@ -97,10 +96,11 @@ class Utils {
     console.log(`=> ERROR - ${errorMsg}`)
     console.log('##########################################################\n')
     this.consoleSubInfo('USAGE:')
-    console.log(`$ node ${fileName} <coinName>`)
+    console.log(`$ node ${fileName} <serviceCfg>`)
     console.log('')
-    this.consoleSubInfo('EXAMPLE:')
-    console.log(`$ node ${fileName} BNB`)
+    this.consoleSubInfo('EXAMPLES:')
+    console.log(`$ node ${fileName} ./config/services/BSC_Testnet/MinerBNB.json`)
+    console.log(`$ node ${fileName} ./config/services/BSC_Testnet/LotteryBNB.json`)
     console.log('')
     this.consoleSubInfo('DETAILS:')
     console.log('To be filled')
