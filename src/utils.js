@@ -10,27 +10,6 @@ const fs = requires('fs')
 
 class Utils {
   constructor () {
-    // Terminal Arguments
-    this.args = ['', process.argv[2]]
-
-    // Config Class Object
-    this.config = new Config(this.args[1], this.securityChecksBeforeStart)
-
-    // Database Class Object
-    this.db = new Database(this)
-
-    // Empty Object, will be filled later
-    this.blockchain = undefined
-
-    // Network Config Object
-    this.network = this.getNetworkConfig()
-
-    // Service Config Object
-    this.service = this.getCurrentService()
-
-    // Contract Config Object
-    this.contract = this.service.contract
-
     // Terminal Colors
     this.colors = {
       defaultInfo: '\x1b[34m',
@@ -58,6 +37,28 @@ class Utils {
       bgCyan: '\x1b[46m',
       bgWhite: '\x1b[47m'
     }
+
+    // Terminal Arguments
+    this.args = ['', process.argv[2]]
+
+    // Config Class Object
+    this.config = new Config(this.args[1], this.securityChecksBeforeStart)
+
+    // Database Class Object
+    this.db = new Database(this)
+
+    // Empty Object, will be filled later
+    this.blockchain = undefined
+
+    // Network Config Object
+    this.network = this.getNetworkConfig()
+
+    // Service Config Object
+    this.service = this.getCurrentService()
+
+    // Contract Config Object
+    this.contract = this.service.contract
+
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -66,7 +67,6 @@ class Utils {
   // | |\/| || |/ __| / __|
   // | |  | || |\__ \| (__
   // |_|  |_||_||___/ \___|
-
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   // MISC: Gets project current selected contract
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -78,14 +78,14 @@ class Utils {
   // MISC: Welcome message
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   welcomeMessage = () => {
-    console.log('------------------------------------------------------------------------------------------------------------------------')
-    console.log(`${this.colors.fgGreen}(!) ${this.colors.fgGreen}Welcome to EventsWatcher-Miners${this.colors.end}`)
-    console.log('------------------------------------------------------------------------------------------------------------------------')
-    console.log(`${this.colors.fgGreen}(!) Network  => ${this.colors.end}${this.network.name}`)
-    console.log(`${this.colors.fgGreen}(!) RPC Node  => ${this.colors.end}${this.network.rpc}`)
-    console.log(`${this.colors.fgGreen}(!) Contract => ${this.colors.end}${this.service.contract.name}`)
-    console.log(`${this.colors.fgGreen}(!) Config   => ${this.colors.end}${this.config.databaseEnv}`)
-    console.log('------------------------------------------------------------------------------------------------------------------------')
+    console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher-Miners`)
+    console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) Network Name       => ${this.colors.end}${this.colors.fgCyan}${this.network.name}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgCyan}${this.network.rpc}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) Sel. Service       => ${this.colors.end}${this.colors.fgCyan}${this.service.contract.name}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) MySQL Enviroment   => ${this.colors.end}${this.colors.fgCyan}${this.config.databaseEnv}${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}-------------------------------------------------------------------------------------------------------------------------------------------`)
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -213,6 +213,13 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // BLOCKCHAIN: Common Blockchain Utils
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  getFloatFromWeiHex = async (hex, decimals) => parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)  // eslint-disable-line
+  getIntFromWeiHex = async (hex) => parseInt(ethers.utils.formatEther(hex))                      // eslint-disable-line
+  getIntFromHex = (hex) => parseInt(hex)       
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   //     ____             __ _
   //    / ___|___  _ __  / _(_) __ _
   //   | |   / _ \| '_ \| |_| |/ _` |
@@ -222,7 +229,6 @@ class Utils {
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   // CONFIG: Gets project current MySQL config
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
   getMySQLConfig = () => {
     // Check if enviroment exists in current mysql config and exits if it does not exist
     if (this.doesItemExistInArray(this.config.databaseEnv, this.config.globalCfg.mysql) === false) {
@@ -292,9 +298,12 @@ class Utils {
       let allEvents = []
 
       // Log some info
-      this.consoleSubInfo(`Contract TxId: ${this.contract.deployTx}`)
-      this.consoleSubInfo(`Contract Deployed @block: ${startBlock}`)
-      this.consoleSubInfo(`Syncing @block: ${endBlock}`)
+      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
+      this.consoleSubInfo(`Contract Address: ${this.contract.address}`)
+      this.consoleSubInfo(`TxId: ${this.contract.deployTx}`)
+      this.consoleSubInfo(`Deployed @block: ${startBlock}`)
+      this.consoleSubInfo(`Syncing to @block: ${endBlock}`)
+      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
 
       // Loop by requesting 10,000 blocks
       for (let i = startBlock; i < endBlock; i += 10000) {
@@ -313,6 +322,7 @@ class Utils {
         allEvents = [...allEvents, ...events]
       }
       this.consoleSubInfo('FINISH')
+      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
       console.log('')
 
       // Now loop each received event that is stored in array and insert in db if not present
@@ -466,15 +476,6 @@ class Utils {
       this.consoleSubInfo(`OK - RPC: ${wantedEvent}`)
     }
   }
-
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // BLOCKCHAIN: Common Blockchain Utils
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-    getFloatFromWeiHex = async (hex, decimals) => parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)  // eslint-disable-line
-    getIntFromWeiHex = async (hex) => parseInt(ethers.utils.formatEther(hex))                      // eslint-disable-line
-    getIntFromHex = (hex) => parseInt(hex)                                                // eslint-disable-line
-
-
 }
 
 export default Utils

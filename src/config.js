@@ -4,7 +4,7 @@ const require = createRequire(import.meta.url)
 const globalCfg = require('./config/global.json')
 
 class Configuration {
-  constructor (_serviceCfg, _securityChecksBeforeStart) {
+  constructor (_serviceCfgPath, _securityChecksBeforeStart) {
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     //    ____             __ _
     //   / ___|___  _ __  / _(_) __ _
@@ -22,7 +22,7 @@ class Configuration {
     // Global & Service
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     this.globalCfg = globalCfg
-    this.serviceCfg = require(_serviceCfg)
+    this.serviceCfg = require(_serviceCfgPath)
     this.databaseEnv = this.serviceCfg.database.enviroment
     this.networkName = this.serviceCfg.networkName
 
