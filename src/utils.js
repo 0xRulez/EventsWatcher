@@ -91,16 +91,15 @@ class Utils {
   // MISC: Exit message if bad argumentss
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   exitWithReadme = (errorMsg) => {
-    const fileName = path.basename(import.meta.url)
     console.log('##########################################################')
     console.log(`=> ERROR - ${errorMsg}`)
     console.log('##########################################################\n')
     this.consoleSubInfo('USAGE:')
-    console.log(`$ node ${fileName} <serviceCfg>`)
+    console.log('$ node index.js <serviceCfg>')
     console.log('')
     this.consoleSubInfo('EXAMPLES:')
-    console.log(`$ node ${fileName} ./config/services/BSC_Testnet/MinerBNB.json`)
-    console.log(`$ node ${fileName} ./config/services/BSC_Testnet/LotteryBNB.json`)
+    console.log('$ node index.js ./config/services/BSC_Testnet/MinerBNB.json')
+    console.log('$ node index.js ./config/services/BSC_Testnet/LotteryBNB.json')
     console.log('')
     this.consoleSubInfo('DETAILS:')
     console.log('To be filled')
@@ -217,7 +216,7 @@ class Utils {
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getFloatFromWeiHex = async (hex, decimals) => parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)  // eslint-disable-line
   getIntFromWeiHex = async (hex) => parseInt(ethers.utils.formatEther(hex))                      // eslint-disable-line
-  getIntFromHex = (hex) => parseInt(hex)       
+  getIntFromHex = (hex) => parseInt(hex)
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   //     ____             __ _
