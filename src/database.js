@@ -35,9 +35,10 @@ class Database {
       // this.connector = await mysql.createConnection({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
       this.connector = await mysql.createPool({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
       this.utils.consoleSubInfo('Connected successfully\n')
-      if (this.doesTableExist(this.tableName) === false) {
+      if (await this.doesTableExist(this.tableName) === false) {
         this.utils.consoleSubInfo('tableName ' + this.tableName + ' does not exist')
-        exit(1)
+        await this.createTable(this.tableName)
+        this.utils.consoleSubInfo('Table created ✅')
       }
     }
     catch (e) {
@@ -46,11 +47,22 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
+  / DB: MySQL Create Table
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+  createTable = async (tableName) => {
+    const [rows] = await this.connector.query('CREATE TABLE ' + tableName + ' (`timestamp` int NULL, `txHash` varchar(255) NULL, `network` varchar(255) NULL, `contractAddr` varchar(255) NULL, `coinName` varchar(30) NULL, `type` varchar(255) NULL, `data` varchar(255) NULL)')
+    const createdTable = rows
+    if (createdTable === 0) return false
+    return true
+  }
+  
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / DB: MySQL Open Connection
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   doesTableExist = async (tableName) => {
     const [rows] = await this.connector.query('SELECT COUNT(TABLE_NAME) FROM information_schema.TABLES WHERE TABLE_SCHEMA LIKE ? AND TABLE_TYPE LIKE \'BASE TABLE\' AND TABLE_NAME = ?', [this.config.database.name, tableName])
-    if (rows.length === 0) return false
+    const doesTableExist = rows[0]['COUNT(TABLE_NAME)']
+    if (doesTableExist === 0) return false
     return true
   }
 
@@ -69,13 +81,16 @@ class Database {
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / DB: Insert Event
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  * @param    {number}  timestamp   - Datetime
-  * @param    {string}  txHash      - Transaction hash
-  * @param    {string}  type        - Event type
-  * @param    {string}  data        - Event data
-  * @returns  {boolean}             - True if inserted || False if not inserted (present)
+  * @param    {number}  timestamp     - Number
+  * @param    {string}  txHash        - Transaction hash
+  * @param    {string}  network       - Network name
+  * @param    {string}  contractAddr  - Contract address
+  * @param    {string}  coinName      - Coin name
+  * @param    {string}  type          - Event type
+  * @param    {string}  eventData     - Event data
+  * @returns  {boolean}               - True if inserted || False if not inserted (present)
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  insertEvent = async (timestamp, txHash, type, eventData) => {
+  insertEvent = async (timestamp, txHash, network, contractAddr, coinName, type, eventData) => {
     // Check if event is present
     const isEventInDatabase = await this.isEventInDatabase(txHash, eventData)
     if (isEventInDatabase) {
@@ -86,7 +101,7 @@ class Database {
     if (this.config.database.debug === true) console.log('++insertEvent: Inserting... ')
 
     // Insert Event
-    const [rows, fields, affectedRows] = await this.connector.execute(`INSERT INTO ${this.tableName} (timestamp, txHash, type, data) VALUES(?, ?, ?, ?)`, [timestamp, txHash, type, eventData])
+    const [rows, fields, affectedRows] = await this.connector.execute(`INSERT INTO ${this.tableName} (timestamp, txHash, network, contractAddr, coinName, type, data) VALUES(?, ?, ?, ?, ?, ? , ?)`, [timestamp, txHash, network, contractAddr, coinName, type, eventData])
     // Exit process on error
     // Debug
     if (this.config.database.debug === true) console.log(rows, fields, affectedRows)

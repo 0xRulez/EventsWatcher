@@ -364,7 +364,7 @@ class Utils {
 
             // Insert event cause its not present
             this.consoleSubInfo('Record not found in db, now adding ❌')
-            await this.db.insertEvent(txBlock.timestamp, txHash, eventType, eventData)
+            await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
             this.consoleSubInfo('Inserted ✅')
 
             // Finish
@@ -460,7 +460,7 @@ class Utils {
 
         // Insert event
         const eventData = JSON.stringify(rebuiltEvent)
-        await this.db.insertEvent(txBlock.timestamp, txHash, eventType, eventData)
+        await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
 
         // Log info
         console.log('---------------------------------------------------------------------------------------------------------------')
