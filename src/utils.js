@@ -2,7 +2,7 @@ import { createRequire } from 'module'
 
 import * as path from 'path'
 import { exit } from 'process'
-import { ethers } from 'ethers'
+import { ethers, utils } from 'ethers'
 import Config from './config.js'
 import Database from './database.js'
 const requires = createRequire(import.meta.url)
@@ -84,6 +84,7 @@ class Utils {
     console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgCyan}${this.network.rpc}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) Sel. Service       => ${this.colors.end}${this.colors.fgCyan}${this.service.contract.name}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) MySQL Enviroment   => ${this.colors.end}${this.colors.fgCyan}${this.config.databaseEnv}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) MySQL Table        => ${this.colors.end}${this.colors.fgCyan}${this.db.tableName}${this.colors.end}`)
     console.log(`${this.colors.fgCyan}-------------------------------------------------------------------------------------------------------------------------------------------`)
   }
 
@@ -137,6 +138,7 @@ class Utils {
     this.exitIfNoCfgExists()
   }
 
+
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   //    _   _  _    _  _
   //   | | | || |_ (_)| | ___
@@ -152,7 +154,9 @@ class Utils {
     if (newLine === true) console.log('')
   }
 
-
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS: Stylish console subInfo (=>)
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   consoleSubInfo = (messageLog, newLine = false) => {
     console.log(`${this.colors.fgBlue}=> ${this.colors.end}${messageLog}`)
     if (newLine === true) console.log('')
@@ -192,12 +196,83 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Array-Util: checks if item exists in an array
+  // UTILS: Array-Util: checks if item exists in an object
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  doesItemExistInArray = (item, arr) => {
+  doesItemExistInObject = (item, arr) => {
     const objKeys = Object.keys(arr)
     for (const i in objKeys) if (objKeys[i] === item) return true
     return false
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS: Array-Util: checks if item exists in an array
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  doesItemExistInArray = (item, arr) => {
+    for (const i in arr) {
+      if (arr[i] === item) return true
+    }
+    return false
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS: Counts decimals for ya
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  countDecimals = (value) => {
+    if ((value % 1) !== 0) { return value.toString().split('.')[1].length }
+    return 0
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS: Format a float string in XDecimals
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  formatXDecimals = (_floatInString, _decimalsToLeave = 2) => {
+    // Generate a string that holds N zeroes
+    let nZeroes = ''
+    for (let z = 0; z < _decimalsToLeave; z++) nZeroes += '0'
+
+    // Security Checks
+    if (isNaN(_floatInString)) return '0.' + nZeroes
+    const startsWithDot = new RegExp('^\\.')
+    if (startsWithDot.test(_floatInString) === true) _floatInString = '0' + _floatInString
+
+    // RegExp to let only X decimal places
+    const fixedDecimals = new RegExp(`^-?\\d+(?:\\.\\d{0,${_decimalsToLeave}})?`, 'g')
+
+    // Replace the big decimals with only 2 using the regular exp object
+    const XDecimals = _floatInString.toString().match(fixedDecimals)
+
+    // If number has wanted decimal places, return like that
+    if (this.countDecimals(XDecimals[0]) === _decimalsToLeave) {
+      return XDecimals[0]
+    }
+
+    // If number has 2 decimal places, add N zeroes -2
+    if (this.countDecimals(XDecimals[0]) === 2) {
+      return XDecimals[0] + nZeroes.slice(2)
+    }
+
+    // If number has 1 decimal places, add N zeroes -1
+    if (this.countDecimals(XDecimals[0]) === 1) {
+      return XDecimals[0] + nZeroes.slice(1)
+    }
+
+    if (XDecimals[0] === '0.0') return XDecimals[0] + nZeroes.slice(1)
+
+    // If number has 0 decimals places, treat it with love
+    if (this.countDecimals(XDecimals[0]) === 0) {
+      // It ends with a dot, add two zeroes
+      const hasDotAtFinal = new RegExp('\\.$')
+      if (hasDotAtFinal.test(XDecimals[0]) === true) {
+        return XDecimals[0] + nZeroes
+      }
+      // It doesnt end with a dot but has it, add N zeroes -1
+      const hasDot = new RegExp('\\.')
+      if (hasDot.test(XDecimals[0]) === true) {
+        return XDecimals[0].replace(/\..*/g, '.' + nZeroes)
+      }
+      // Does not end with a dot, add dot & N zeroes
+      return XDecimals[0] + '.' + nZeroes
+    }
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -212,11 +287,25 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // BLOCKCHAIN: Common Blockchain Utils
+  // UTILS: Get Float from Wei Hex (BigNumber)
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  getFloatFromWeiHex = async (hex, decimals) => parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)  // eslint-disable-line
-  getIntFromWeiHex = async (hex) => parseInt(ethers.utils.formatEther(hex))                      // eslint-disable-line
-  getIntFromHex = (hex) => parseInt(hex)
+  getFloatFromWeiHex = async (hex, decimals) => {
+    return parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS: Get Integer from Wei Hex (BigNumber)
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  getIntFromWeiHex = async (hex) => {
+    return parseInt(ethers.utils.formatEther(hex))
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS: Get Integer from Hex (BigNumber)
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  getIntFromHex = (hex) => {
+    return parseInt(hex)
+  }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   //     ____             __ _
@@ -230,7 +319,7 @@ class Utils {
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getMySQLConfig = () => {
     // Check if enviroment exists in current mysql config and exits if it does not exist
-    if (this.doesItemExistInArray(this.config.databaseEnv, this.config.globalCfg.mysql) === false) {
+    if (this.doesItemExistInObject(this.config.databaseEnv, this.config.globalCfg.mysql) === false) {
       console.log(`ERROR: Selected MySQL Enviroment "${this.config.databaseEnv}" does not exist`)
       exit(1)
     }
@@ -243,7 +332,7 @@ class Utils {
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getNetworkConfig = () => {
     // Check if network exists in global config and exits if it does not exist
-    if (this.doesItemExistInArray(this.config.networkName, this.config.globalCfg.networks) === false) {
+    if (this.doesItemExistInObject(this.config.networkName, this.config.globalCfg.networks) === false) {
       console.log(`ERROR: Selected network "${this.config.networkName}" does not exist`)
       exit(1)
     }
@@ -355,7 +444,7 @@ class Utils {
             const eventData = JSON.stringify(eventObj)
 
             // Check if event is inserted in database
-            const isEventInDatabase = await this.db.isEventInDatabase(txHash, eventData)
+            const isEventInDatabase = await this.db.isEventInDatabase(txHash, eventType, this.config.networkName)
             if (isEventInDatabase === true) {
               this.consoleSubInfo('Record already exists ✅')
               isEventAlreadyInDb = true
@@ -418,15 +507,27 @@ class Utils {
 
     // Loop thought event arguments
     for (const arg in event.args) {
+
       // Store current argument value
       let currentValue = event.args[arg]
 
       // Check if argument value is not a number
       if (Number.isInteger(parseInt(arg)) === false) {
+
         // If not a number, it could be a BigNumber
         if (currentValue instanceof ethers.BigNumber) {
+
+          // Find if eventType is in formatEther config
+          if (this.doesItemExistInArray(arg, this.config.formatEther) === true) {
+            const nonFormatEther = ethers.utils.formatEther(event.args[arg])
+            const currentValue = this.formatXDecimals(nonFormatEther)
+            eventObject[arg] = currentValue
+            continue
+          }
+
           // Obtain real integer value
-          currentValue = this.getIntFromHex(event.args[arg])
+          currentValue = `${this.getIntFromHex(event.args[arg])}`
+
         }
         // Store the value in the new aux object
         eventObject[arg] = currentValue

@@ -25,6 +25,7 @@ class Configuration {
     this.serviceCfg = require(_serviceCfgPath)
     this.databaseEnv = this.serviceCfg.database.enviroment
     this.networkName = this.serviceCfg.networkName
+    this.formatEther = this.serviceCfg.contract.formatEther.split(', ')
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     // Fill JSON matching selected serviceCfg

@@ -29,7 +29,7 @@
         },
         "BSC_Testnet": {
             "name": "Binance Smart Chain (Testnet)",
-            "rpc": "https://solitary-solitary-shadow.bsc-testnet.discover.quiknode.pro/9cf56d03899187991fa9ceb4b15fc2b30a74a941/",
+            "rpc": "https://aged-delicate-tab.bsc-testnet.discover.quiknode.pro/c0211ae34348ce0c1f022c6bdebe814f3481e66b/",
             "scanURL": "https://testnet.bscscan.com"
         }
     }

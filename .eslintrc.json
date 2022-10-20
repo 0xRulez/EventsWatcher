@@ -15,6 +15,11 @@
         "no-unused-vars": 1,
         "no-multiple-empty-lines": 0,
         "no-trailing-spaces": 1,
-        "padded-blocks": 1
+        "padded-blocks": 0,
+        "lines-between-class-members": 1,
+        "indent": 1,
+        "semi": 1,
+        "no-empty": 1,
+        "prefer-regex-literals": 0
     }
 }

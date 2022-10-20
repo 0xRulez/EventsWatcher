@@ -55,7 +55,7 @@ class Database {
     if (createdTable === 0) return false
     return true
   }
-  
+
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / DB: MySQL Open Connection
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
@@ -70,10 +70,11 @@ class Database {
   / DB: Event Exists
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   * @param {string}  txHash      - Transaction hash
-  * @param {string}  eventData   - Event data
+  * @param {string}  eventType   - Event type
+  * @param {string}  networkName - Network name
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  isEventInDatabase = async (txHash, eventData) => {
-    const [rows] = await this.connector.query(`SELECT * FROM ${this.tableName} WHERE txHash = ? AND data = ?`, [txHash, eventData])
+  isEventInDatabase = async (txHash, eventType, networkName) => {
+    const [rows] = await this.connector.query(`SELECT * FROM ${this.tableName} WHERE txHash = ? AND type = ? AND network =`, [txHash, eventType, networkName])
     if (rows.length === 0) return false
     return true
   }
@@ -83,7 +84,7 @@ class Database {
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   * @param    {number}  timestamp     - Number
   * @param    {string}  txHash        - Transaction hash
-  * @param    {string}  network       - Network name
+  * @param    {string}  network       - Network name
   * @param    {string}  contractAddr  - Contract address
   * @param    {string}  coinName      - Coin name
   * @param    {string}  type          - Event type
