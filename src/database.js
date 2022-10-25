@@ -74,7 +74,7 @@ class Database {
   * @param {string}  networkName - Network name
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   isEventInDatabase = async (txHash, eventType, networkName) => {
-    const [rows] = await this.connector.query(`SELECT * FROM ${this.tableName} WHERE txHash = ? AND type = ? AND network =`, [txHash, eventType, networkName])
+    const [rows] = await this.connector.query(`SELECT * FROM ${this.tableName} WHERE txHash = ? AND type = ? AND network = ?`, [txHash, eventType, networkName])
     if (rows.length === 0) return false
     return true
   }
