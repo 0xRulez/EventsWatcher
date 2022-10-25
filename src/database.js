@@ -6,7 +6,6 @@
 // |____/   \__,_|  \__|  \__,_| |_.__/   \__,_| |___/  \___|
 
 import mysql from 'mysql2/promise'
-import { exit } from 'process'
 class Database {
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / Constructor
@@ -19,15 +18,7 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Throws the error and exit
-  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
-  throwExitError = (e) => {
-    console.log('=> MySQL ERROR!' + e)
-    throw new Error(e)
-  }
-
-  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: MySQL Open Connection
+  / DB: Creates connection pool & connets to it
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   openDatabase = async () => {
     try {
@@ -47,8 +38,10 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: MySQL Create Table
-  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+  / DB: Creates a table in current database
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
+  * @param {string}  tableName    - Table name
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   createTable = async (tableName) => {
     const [rows] = await this.connector.query('CREATE TABLE ' + tableName + ' (`timestamp` int NULL, `txHash` varchar(255) NULL, `network` varchar(255) NULL, `contractAddr` varchar(255) NULL, `coinName` varchar(30) NULL, `type` varchar(255) NULL, `data` varchar(255) NULL)')
     const createdTable = rows
@@ -57,8 +50,10 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: MySQL Open Connection
-  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+  / DB: Checks if table exists
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
+  * @param {string}  tableName    - Table name
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   doesTableExist = async (tableName) => {
     const [rows] = await this.connector.query('SELECT COUNT(TABLE_NAME) FROM information_schema.TABLES WHERE TABLE_SCHEMA LIKE ? AND TABLE_TYPE LIKE \'BASE TABLE\' AND TABLE_NAME = ?', [this.config.database.name, tableName])
     const doesTableExist = rows[0]['COUNT(TABLE_NAME)']
