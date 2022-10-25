@@ -11,7 +11,7 @@
         "deployTx": "0xfdd53b9cda1269fe35107c9cb643176e934fbaf1b7c75255d647c7123a5a6b41",
         "coinName": "BNB",
         "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
-        "formatEther": "_amount, _lotteryValue",
+        "formatEther": "_amount, _lotteryValue, _value, _eggsValues",
         "pathToAbi": "./config/artifacts/miners/MinerV1Native.json"
     }
 }
