@@ -1,17 +1,17 @@
 {
-    "type": "miner",
-    "networkName": "BSC_Testnet",
-    "database": {
-        "enviroment": "dev",
-        "tableName": "minersEvents"
-    },
-    "contract": {
-        "name": "MinerV1Native",
-        "address": "0x8f73B9D634Ff689AcAea3534eD1deDdD4aA46623",
-        "deployTx": "0xfdd53b9cda1269fe35107c9cb643176e934fbaf1b7c75255d647c7123a5a6b41",
-        "coinName": "BNB",
-        "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
-        "formatEther": "_amount, _lotteryValue, _value, _eggsValues",
-        "pathToAbi": "./config/artifacts/miners/MinerV1Native.json"
-    }
+  "type": "miner",
+  "networkName": "BSC_Testnet",
+  "database": {
+    "enviroment": "dev",
+    "tableName": "minersEvents"
+  },
+  "contract": {
+    "name": "MinerV1Native",
+    "address": "0x8f73B9D634Ff689AcAea3534eD1deDdD4aA46623",
+    "deployTx": "0xfdd53b9cda1269fe35107c9cb643176e934fbaf1b7c75255d647c7123a5a6b41",
+    "coinName": "BNB",
+    "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
+    "formatEther": "_amount, _lotteryValue, _value, _eggsValues",
+    "pathToAbi": "./config/artifacts/miners/MinerV1Native.json"
+  }
 }
