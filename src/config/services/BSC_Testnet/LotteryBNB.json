@@ -7,8 +7,8 @@
   },
   "contract": {
     "name": "LotteryV1Native",
-    "address": "0x575c665766E0F19a6730bc81FB4986AdaDAbC174",
-    "deployTx": "0x92c1a9d1ca16746541917f31f94180b97760ca9d378875f308e26e76111c6bb2",
+    "address": "0x6be76c3014271f078845a069B102cEbfF91cf9d5",
+    "deployTx": "0x4bf3ddfbfcf552bf4868791bf595cdab001fccb420860a341259aa478130bac0",
     "coinName": "BNB",
     "wantedEvents": "purchasedTickets, numberRequested, pickedWinner",
     "formatEther": "_value",

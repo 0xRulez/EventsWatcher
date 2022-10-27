@@ -1,8 +1,7 @@
 import { createRequire } from 'module'
 
-import * as path from 'path'
 import { exit } from 'process'
-import { ethers, utils } from 'ethers'
+import { ethers } from 'ethers'
 import Config from './config.js'
 import Database from './database.js'
 const requires = createRequire(import.meta.url)
@@ -77,15 +76,15 @@ class Utils {
   // MISC: Welcome message
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   welcomeMessage = () => {
-    console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
-    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher `)
-    console.log(`${this.colors.fgCyan}------------------------------------------------------------------------------------------------------------------------------------------- ${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}===========================================================================================================================================${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher - Copyright © Anima Studios`)
+    console.log(`${this.colors.fgCyan}===========================================================================================================================================${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) Network Name       => ${this.colors.end}${this.colors.fgCyan}${this.network.name}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgCyan}${this.network.rpc}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) Sel. Service       => ${this.colors.end}${this.colors.fgCyan}${this.service.contract.name}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) MySQL Enviroment   => ${this.colors.end}${this.colors.fgCyan}${this.config.databaseEnv}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) MySQL Table        => ${this.colors.end}${this.colors.fgCyan}${this.db.tableName}${this.colors.end}`)
-    console.log(`${this.colors.fgCyan}-------------------------------------------------------------------------------------------------------------------------------------------`)
+    console.log(`${this.colors.fgCyan}===========================================================================================================================================`)
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

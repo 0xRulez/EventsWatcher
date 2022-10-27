@@ -6,12 +6,12 @@
     "tableName": "minersEvents"
   },
   "contract": {
-    "name": "MinerV1Native",
-    "address": "0xb9322Cb62c07301781C54641a730B606d32fB086",
-    "deployTx": "0x6193a60581f56042d241b93d1c8ff1b5d1942a8f9afaaa729a83ac60950554a2",
-    "coinName": "BNB",
+    "name": "MinerV1ERC20",
+    "address": "0x0A93de166Af28ED212818f54eee29780E7675c56",
+    "deployTx": "0x72519d77f4992274eaba6dc33c16e12c35c1c2f28d79079bb892303332bedf54",
+    "coinName": "BUSD",
     "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
     "formatEther": "_amount, _lotteryValue, _value, _eggsValues",
-    "pathToAbi": "./config/artifacts/miners/MinerV1Native.json"
+    "pathToAbi": "./config/artifacts/miners/MinerV1ERC20.json"
   }
 }

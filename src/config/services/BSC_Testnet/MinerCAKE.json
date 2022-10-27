@@ -6,12 +6,12 @@
     "tableName": "minersEvents"
   },
   "contract": {
-    "name": "MinerV1Native",
-    "address": "0xb9322Cb62c07301781C54641a730B606d32fB086",
-    "deployTx": "0x6193a60581f56042d241b93d1c8ff1b5d1942a8f9afaaa729a83ac60950554a2",
-    "coinName": "BNB",
+    "name": "MinerV1ERC20",
+    "address": "0x89B397C67D382395A67b34de51333825978C651d",
+    "deployTx": "0xa2a8645de72c71e03ba2beaa05aeb708625b12004c2b884472a47c7d93d8af3a",
+    "coinName": "CAKE",
     "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
     "formatEther": "_amount, _lotteryValue, _value, _eggsValues",
-    "pathToAbi": "./config/artifacts/miners/MinerV1Native.json"
+    "pathToAbi": "./config/artifacts/miners/MinerV1ERC20.json"
   }
 }
