@@ -1,4 +1,5 @@
 #!/bin/bash
+BLACK='\033[0;30m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
@@ -6,6 +7,7 @@ PURPLE='\033[0;35m'
 WHITE='\033[0;37m'
 CYAN='\033[0;36m'
 YELLOW='\033[0;33m'
+BGYELLOW='\033[0;42m'
 NC='\033[0m'
 WEBAPP_JSON_CFG="../SPD-WebApp/src/Components/Config/global.json"
 
@@ -17,7 +19,7 @@ showAvailableNetworks () {
     # Security Check - No networks available
     if [ -z "$availableNetworks" ]
     then
-        echo -e "${CYAN}=> ${RED}No networks available"
+        echo -e "${CYAN}=> ${RED}No networks available in WEBAPP CFG"
     fi
 
     # Select network
@@ -42,7 +44,7 @@ showAvailableProcs () {
     if [ -z "$availableCfgs" ]
     then
         echo ""
-        echo -e "${CYAN}=> ${RED}No services available"
+        echo -e "${CYAN}=> ${RED}No running services"
         echo ""
         exit
     fi
@@ -51,7 +53,7 @@ showAvailableProcs () {
     ################################################################################################
     aliveServices=""
     echo ""
-    echo -e "${PURPLE}INFO: Querying services for ${CYAN}[$selectedNetwork]${NC}"
+    echo -e "${PURPLE}INFO: Querying running services for ${CYAN}[$selectedNetwork]${NC}"
     for cfg in $(ls $servicePathFromHere)
     do
         # Try to list process matching pattern
@@ -71,15 +73,8 @@ showAvailableProcs () {
     exit
 }
 
-while true
-do
-    ################################################################################################
-    # Starter
-    ################################################################################################
-    echo -e "${CYAN}--------------------------------------------------------${NC}"
-    echo -e "${CYAN}# Welcome to EventsWatcher Stopper${NC}"
-    echo -e "${CYAN}--------------------------------------------------------${NC}"
-    echo -e ""
-    echo -e "${PURPLE}INFO: Please select the network so we can list services for stop${NC}"
-    showAvailableNetworks
-done
+################################################################################################
+# Starter
+################################################################################################
+echo -e "${PURPLE}INFO: Please select the network so we can list services${NC}"
+showAvailableNetworks

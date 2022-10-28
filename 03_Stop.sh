@@ -20,7 +20,7 @@ showAvailableNetworks () {
         echo -e "${CYAN}=> ${RED}No networks available"
         exit
     fi
-
+    
     # Select network
     select network in $availableNetworks
     do
@@ -37,7 +37,7 @@ showAvailableProcs () {
     servicePathFromHere="./src/config/services/$selectedNetwork"
     availableCfgs=`ls $servicePathFromHere 2>/dev/null`
     servicePath="./config/services/$selectedNetwork"
-
+    
     # Security Check - No services available
     if [ -z "$availableCfgs" ]
     then
@@ -46,15 +46,15 @@ showAvailableProcs () {
         echo ""
         exit
     fi
-
+    
     aliveServices=""
     echo ""
-    echo -e "${PURPLE}INFO: Querying services for ${YELLOW}[$selectedNetwork]${NC}"
+    echo -e "${PURPLE}INFO: Querying services for ${CYAN}[$selectedNetwork]${NC}"
     for cfg in $(ls $servicePathFromHere)
     do
         # Try to list process matching pattern
         isAlive=`ps -ef | grep EW | grep $selectedNetwork | grep $cfg`
-
+        
         # If variable isAlive is empty, process / service not alive
         if [ -z "$isAlive" ]
         then
@@ -65,7 +65,7 @@ showAvailableProcs () {
             aliveServices+="$cfg "
         fi
     done
-
+    
     ################################################################################################
     # Security: Stop here if there are no services to stop
     ################################################################################################
@@ -77,7 +77,7 @@ showAvailableProcs () {
         exit
     fi
     echo -e ""
-
+    
     ################################################################################################
     # Part 03 - Choose to stop alive services
     ################################################################################################
@@ -85,12 +85,17 @@ showAvailableProcs () {
     select stopCfg in $aliveServices
     do
         echo ""
-        echo -e "${PURPLE}INFO: Stopping service ${YELLOW}[$selectedNetwork] [$stopCfg]${NC}"
-        ids=`ps -ef | grep EW | grep $selectedNetwork | grep $stopCfg | awk '{print $2}'`
-        echo -e "${CYAN}=> Killing PID(s):${NC}"
-        echo -e "${YELLOW}$ids${NC}"
+        echo -e "${PURPLE}INFO: Stopping service ${CYAN}[$selectedNetwork] ${YELLOW}[$stopCfg]${NC}"
+        pids=`ps -ef | grep EW | grep $selectedNetwork | grep $stopCfg | awk '{print $2}'`
         ps -ef | grep EW | grep $selectedNetwork | grep $stopCfg | awk '{print $2}' | xargs kill -9
-        screen -wipe
+        echo ""
+        echo -e "${PURPLE}INFO: Killed PID(s)${NC}"
+        for pid in $pids
+        do
+            echo -e "${CYAN}=> ${YELLOW}$pid${NC}"
+        done
+        echo ""
+        screen -wipe > /dev/null
         exit
     done
 }
@@ -99,9 +104,6 @@ showAvailableProcs () {
 ################################################################################################
 # Starter
 ################################################################################################
-echo -e "${CYAN}--------------------------------------------------------${NC}"
-echo -e "${CYAN}# Welcome to EventsWatcher Stopper${NC}"
-echo -e "${CYAN}--------------------------------------------------------${NC}"
 echo -e "${PURPLE}INFO: Please select the network so we can list services for stop${NC}"
 showAvailableNetworks
 

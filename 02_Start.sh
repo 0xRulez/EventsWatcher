@@ -55,7 +55,7 @@ showAvailableCfgs () {
         # Part 03 - Run selected service
         ################################################################################################
         echo ""
-        echo -e "${PURPLE}INFO: Launching service ${YELLOW}[$selectedNetwork] [$selectedCfg]${NC}"
+        echo -e "${PURPLE}INFO: Launching service ${CYAN}[$selectedNetwork] ${YELLOW}[$selectedCfg]${NC}"
         screen -A -m -d -S EW-$selectedNetwork-$selectedCfg bash -c "cd src && node index.js $servicePath/$selectedCfg 2>&1 | tee -a ../logs/EW-$selectedNetwork-$selectedCfg.log"
         echo ""
         echo -e "${PURPLE}INFO: EventsWatcher screen is now running!${NC}"
@@ -67,8 +67,5 @@ showAvailableCfgs () {
 ################################################################################################
 # Starter
 ################################################################################################
-echo -e "${CYAN}--------------------------------------------------------${NC}"
-echo -e "${CYAN}# Welcome to EventsWatcher Runner${NC}"
-echo -e "${CYAN}--------------------------------------------------------${NC}"
 echo -e "${PURPLE}INFO: Please select the network you would like to run${NC}"
 showAvailableNetworks
