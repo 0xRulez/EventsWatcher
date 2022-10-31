@@ -13,9 +13,9 @@
         "dev": {
             "database": {
                 "host": "192.168.1.90",
-                "name": "blockApp01",
-                "username": "blockApp01",
-                "password": "kYPiKz1YMSr5bqkw.",
+                "name": "spd",
+                "username": "eventswatcher",
+                "password": "AdImGxWH)R:R-zB3R#Yx",
                 "port": "3306",
                 "debug": "false"
             }
