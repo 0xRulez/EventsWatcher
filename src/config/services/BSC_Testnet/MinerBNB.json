@@ -7,8 +7,8 @@
   },
   "contract": {
     "name": "MinerV1Native",
-    "address": "0xb9322Cb62c07301781C54641a730B606d32fB086",
-    "deployTx": "0x6193a60581f56042d241b93d1c8ff1b5d1942a8f9afaaa729a83ac60950554a2",
+    "address": "0xAbCb24510f3b0F44301765f7d460036cF9173a65",
+    "deployTx": "0x152fc27904e5aedb00ab5b5f1caea86489921a7c0714ded75393692640f65242",
     "coinName": "BNB",
     "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
     "formatEther": "_amount, _lotteryValue, _value, _eggsValues",

@@ -7,8 +7,8 @@
   },
   "contract": {
     "name": "LotteryV1ERC20",
-    "address": "0xEB1E554Ac63aBC36Bd56587Ff36B402415a89e59",
-    "deployTx": "0xb8f82457afcd341691cf39d94aea602eb07b9296f64e7b6885e9765ea1979a6b",
+    "address": "0xc5FBf2c24Bdf279EC6BF2Cb98122a4900aA5C50C",
+    "deployTx": "0x33a0c3e4c8307977b667b80873942e90cb3af43359d44887d567f036a32a0a8c",
     "coinName": "BUSD",
     "wantedEvents": "purchasedTickets, numberRequested, pickedWinner",
     "formatEther": "_value",
