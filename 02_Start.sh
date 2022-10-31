@@ -1,71 +1,32 @@
 #!/bin/bash
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-PURPLE='\033[0;35m'
-WHITE='\033[0;37m'
-CYAN='\033[0;36m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
-WEBAPP_JSON_CFG="../SPD-WebApp/src/Components/Config/global.json"
+source ../SPD-Resources/Bash/99_Utils.sh
+APP_GREP_PATTERN="EW"
+APP_NAME="EventsWatcher"
 
-################################################################################################
-# Part 01 - Select network
-################################################################################################
-showAvailableNetworks () {
-    availableNetworks=`cat $WEBAPP_JSON_CFG | jq 'keys' -c | sed 's/\["//g' | sed 's/"\]//g' | sed 's/",/ /g' | sed 's/"//g'`
-    # Security Check - No networks available
-    if [ -z "$availableNetworks" ]
-    then
-        echo -e "${CYAN}=> ${RED}No networks available"
-    fi
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+# 01. Select a network
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+exitIfNoNetworks
+echo -e "${PURPLE}INFO: Please select the network so we can list services to start${NC}"
+network=$(selectAvailableNetwork)
+echo ""
 
-    # Select network
-    select network in $availableNetworks
-    do
-        # Next step
-        showAvailableCfgs $network
-    done
-}
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+# 02. Select a service from selected network
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+exitIfNoServices "$network"
+echo -e "${PURPLE}INFO: Please select the service you would like to run${NC}"
+service=$(selectNetworkService "$network")
+echo ""
 
-################################################################################################
-# Part 02 - Get available services
-################################################################################################
-showAvailableCfgs () {
-    selectedNetwork=$1
-    servicePathFromHere="./src/config/services/$selectedNetwork"
-    servicePath="./config/services/$selectedNetwork"
-    availableCfgs=`ls $servicePathFromHere 2>/dev/null`
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+# 03. Build & launch service
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+if [ ! -d "./logs/$network" ]; then
+    mkdir "./logs/$network"
+fi
+screenName="$APP_GREP_PATTERN-$network-$service"
+serviceCMD="cd src && node $APP_NAME.js ./$APP_CONFIG_PATH/$network/$service 2>&1 | tee -a ../logs/$network/$service.log"
+launchService "$screenName" "$serviceCMD" "$APP_NAME"
 
-    # Security Check - No services available
-    if [ -z "$availableCfgs" ]
-    then
-        echo ""
-        echo -e "${CYAN}=> ${RED}No services available"
-        echo ""
-        exit
-    fi
-    echo ""
-
-    # SelectMenu => Service cfg
-    echo -e "${PURPLE}INFO: Please select the service you would like to run${NC}"
-    select selectedCfg in $availableCfgs
-    do
-        ################################################################################################
-        # Part 03 - Run selected service
-        ################################################################################################
-        echo ""
-        echo -e "${PURPLE}INFO: Launching service ${CYAN}[$selectedNetwork] ${YELLOW}[$selectedCfg]${NC}"
-        screen -A -m -d -S EW-$selectedNetwork-$selectedCfg bash -c "cd src && node index.js $servicePath/$selectedCfg 2>&1 | tee -a ../logs/EW-$selectedNetwork-$selectedCfg.log"
-        echo ""
-        echo -e "${PURPLE}INFO: EventsWatcher screen is now running!${NC}"
-        screen -ls
-        exit
-    done
-}
-
-################################################################################################
-# Starter
-################################################################################################
-echo -e "${PURPLE}INFO: Please select the network you would like to run${NC}"
-showAvailableNetworks
+exit
