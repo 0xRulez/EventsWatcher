@@ -2,7 +2,7 @@
   "name": "api",
   "version": "1.0.0",
   "description": "Events Watcher for Blockchain",
-  "main": "index.js",
+  "main": "EventsWatcher.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,10 +17,10 @@
     "sqlite3": "^5.0.8"
   },
   "devDependencies": {
-    "eslint": "^8.25.0",
+    "eslint": "^8.26.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-n": "^15.3.0",
-    "eslint-plugin-promise": "^6.0.1"
+    "eslint-plugin-promise": "^6.1.1"
   }
 }
