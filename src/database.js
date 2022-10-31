@@ -12,9 +12,9 @@ class Database {
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   constructor (_utils) {
     this.utils = _utils
+    this.colors = _utils.colors
     this.config = this.utils.getMySQLConfig()                              // Include global mysql config
     this.tableName = this.utils.config.serviceCfg.database.tableName       // Table name
-    this.connector = undefined                                             // MySQL connector
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
@@ -24,9 +24,9 @@ class Database {
     try {
       this.utils.consoleInfo('INFO: MySQL database is initializing...')
       // this.connector = await mysql.createConnection({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
-      this.connector = await mysql.createPool({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name }, () => {
-        console.log('hi')
-      })
+      this.connector = await mysql.createPool({ host: this.config.database.host, user: this.config.database.username, password: this.config.database.password, database: this.config.database.name })
+      await this.testConnection()
+      this.utils.consoleSubInfo(`${this.colors.fgGreen}Connected successfully${this.colors.end}`)
 
       if (await this.doesTableExist(this.tableName) === false) {
         this.utils.consoleSubInfo('tableName ' + this.tableName + ' does not exist')
@@ -37,6 +37,19 @@ class Database {
     }
     catch (e) {
       throw new Error(e)
+    }
+  }
+
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
+  / DB: Test MySQL Connection
+  /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+  testConnection = async () => {
+    try {
+      const [rows] = await this.connector.query('SELECT 1')
+      return rows
+    }
+    catch (e) {
+      this.throwExitError(e)
     }
   }
 

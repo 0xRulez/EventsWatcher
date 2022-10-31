@@ -4,10 +4,14 @@ import { exit } from 'process'
 import { ethers } from 'ethers'
 import Config from './config.js'
 import Database from './database.js'
+import ReconnectableEthers from './ReconnectableEthersWS.js'
 const requires = createRequire(import.meta.url)
 const fs = requires('fs')
 
 class Utils {
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // App Core: Initialize class
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   constructor () {
     // Terminal Colors
     this.colors = {
@@ -60,82 +64,212 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // __  __  _
-  // |  \/  |(_) ___   ___
-  // | |\/| || |/ __| / __|
-  // | |  | || |\__ \| (__
-  // |_|  |_||_||___/ \___|
+  // App Core: Initialize app by instancing database & Web3 WS
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // MISC: Gets project current selected contract
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  getCurrentService = () => {
-    return this.config.serviceCfg
+  runApp = async () => {
+    // Welcome message
+    this.welcomeMessage()
+
+    // Open database
+    await this.db.openDatabase()
+
+    // Open WebSocket
+    this.consoleInfo('INFO: Web3 EthersWS is initializing')
+    try {
+      // Setup ReconnectableEthers WS Provider
+      this.reconnectableEthers = new ReconnectableEthers(this.continueRunApp)
+      this.reconnectableEthers.load({ WS_PROVIDER_ADDRESS: 'wss://aged-delicate-tab.bsc-testnet.discover.quiknode.pro/c0211ae34348ce0c1f022c6bdebe814f3481e66b/' })
+    }
+    catch (e) {
+      console.log('ERROR while Web3 Setup. Check correct RPC / ABI / Contract Address in configuration\n\n', e); exit(1)
+    }
+    return true
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // MISC: Welcome message
+  // App Core: Continue to initialize app (after EthersWS is connected)
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  welcomeMessage = () => {
-    console.log(`${this.colors.fgCyan}===========================================================================================================================================${this.colors.end}`)
-    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher - Copyright © Anima Studios`)
-    console.log(`${this.colors.fgCyan}===========================================================================================================================================${this.colors.end}`)
-    console.log(`${this.colors.fgGreen}(#) Network Name       => ${this.colors.end}${this.colors.fgCyan}${this.network.name}${this.colors.end}`)
-    console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgCyan}${this.network.rpc}${this.colors.end}`)
-    console.log(`${this.colors.fgGreen}(#) Sel. Service       => ${this.colors.end}${this.colors.fgCyan}${this.service.contract.name}${this.colors.end}`)
-    console.log(`${this.colors.fgGreen}(#) MySQL Enviroment   => ${this.colors.end}${this.colors.fgCyan}${this.config.databaseEnv}${this.colors.end}`)
-    console.log(`${this.colors.fgGreen}(#) MySQL Table        => ${this.colors.end}${this.colors.fgCyan}${this.db.tableName}${this.colors.end}`)
-    console.log(`${this.colors.fgCyan}===========================================================================================================================================`)
+  continueRunApp = async () => {
+    // Setup JSON RPC Provider
+    this.blockchain = this.reconnectableEthers.provider
+
+    // Get the instance of the contract
+    this.contract.instance = new ethers.Contract(this.contract.address, this.contract.json.abi, this.blockchain)
+
+    // Connect to contract instance
+    this.contract.instance.connect(this.blockchain)
+    this.consoleSubInfo(`${this.colors.fgGreen}Connected successfully${this.colors.end}\n`)
+
+    // Reload all events from blockchain 1-by-1 & compare each to DB
+    await this.reloadEventsFromBlockchain()
+
+    // Listen to events
+    await this.eventsListenter()
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // MISC: Exit message if bad argumentss
+  // App Core: Loop the blockain by requesting info of 10,000 blocks
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  exitWithReadme = (errorMsg) => {
-    console.log('##########################################################')
-    console.log(`=> ERROR - ${errorMsg}`)
-    console.log('##########################################################\n')
-    this.consoleSubInfo('USAGE:')
-    console.log('$ node index.js <serviceCfg>')
-    console.log('')
-    this.consoleSubInfo('EXAMPLES:')
-    console.log('$ node index.js ./config/services/BSC_Testnet/MinerBNB.json')
-    console.log('$ node index.js ./config/services/BSC_Testnet/LotteryBNB.json')
-    console.log('')
-    this.consoleSubInfo('DETAILS:')
-    console.log('To be filled')
-    console.log('Soon')
-    console.log('')
-    exit(1)
-  }
+  reloadEventsFromBlockchain = async () => {
+    try {
 
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // MISC: Exit on bad number of argumentss
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  exitIfNoCorrectNumberOfArguments = (n) => {
-    for (let i = 1; i <= n; i++) {
-      if (this.args[i] === undefined) {
-        this.exitWithReadme(`Bad number of arguments, ${n} required`)
+      // Report to console
+      // Start block is contract's deploy transaction block
+      // End block is current block number
+      this.consoleInfo('INFO: Reloading events from blockchain')
+      const startBlock = await this.blockchain.send('eth_getTransactionReceipt', [this.contract.deployTx]).then(async (r) => await this.getIntFromHex(r.blockNumber))
+      const endBlock = await this.blockchain.getBlockNumber()
+
+      // Prepare some useful terminal colors
+      // Report to console
+      const yellow = this.colors.fgYellow
+      const magenta = this.colors.fgMagenta
+      const green = this.colors.fgGreen
+      const red = this.colors.fgRed
+      const end = this.colors.end
+      console.log(`===========================================================================================================================================${end}`)
+      this.consoleSubInfo(`${magenta}Contract Address: ${yellow}${this.contract.address}${end}`)
+      this.consoleSubInfo(`${magenta}TxId: ${yellow}${this.contract.deployTx}${end}`)
+      this.consoleSubInfo(`${magenta}Deployed @block: ${yellow}${startBlock}${end}`)
+      this.consoleSubInfo(`${magenta}Syncing to @block: ${yellow}${endBlock}${end}`)
+      console.log(`===========================================================================================================================================${end}`)
+
+      // Aux Var to temporarily store received events
+      // Loop by requesting 10,000 blocks
+      let allEvents = []
+      for (let i = startBlock; i < endBlock; i += 10000) {
+        // Relative start & end of block
+        const _startBlock = i
+        const _endBlock = Math.min(endBlock, i + 9999)
+
+        // Calculate % of filled up & log info
+        const percent = parseFloat((endBlock - _startBlock) / endBlock * 100).toFixed(2)
+        this.consoleSubInfo(`${yellow}${_startBlock}/${endBlock} | ${endBlock - _startBlock} blocks remaining ${green}(${parseFloat(100 - percent).toFixed(2)}%)${end}`)
+
+        // Get the important stuff here, all the events br0h.
+        const events = await this.contract.instance.queryFilter('*', _startBlock, _endBlock)
+
+        // Fill up received events to array and keep going!
+        allEvents = [...allEvents, ...events]
       }
+      this.consoleSubInfo(`${green}Finished${end}`)
+      console.log('')
+
+      // Now loop each received event that is stored in array and insert in db if not present
+      this.consoleInfo(`INFO: Now syncing ${green}[${allEvents.length} events] ${magenta}with DB`)
+      let isEventAlreadyInDb = false
+      let numberOfAddedEvents = 0
+      let i = 1
+      for (const event of allEvents) {
+        let found = false
+        const eventType = event.event
+        console.log('=================================================================================')
+        this.consoleSubInfo(`${green}[${i++}/${allEvents.length}] ${magenta}Processing Event: ${yellow}${eventType}${end}`)
+        console.log('=================================================================================')
+        // Now loop again each event, but this time we check against wanted events
+        for (const wantedEvent of this.service.contract.wantedEvents.split(', ')) {
+          // If iterared event is a wanted event...
+          if (eventType === wantedEvent) {
+            // Get useful event information
+            const txHash = event.transactionHash
+            const txBlock = await event.getBlock()
+
+            // Print some info
+            this.consoleSubInfo(`${magenta}Date: ${yellow}${await this.getDateTimeFromBlockchainEvent(txBlock.timestamp)} ${txBlock.timestamp}${end}`)
+            this.consoleSubInfo(`${magenta}Args: ${end}`)
+
+            // Reconstruct the event object
+            const eventObj = this.rebuildEventArguments(event)
+            console.log(eventObj)
+
+            // Stringify event object into json
+            const eventData = JSON.stringify(eventObj)
+
+            // Check if event is inserted in database
+            const isEventInDatabase = await this.db.isEventInDatabase(txHash, eventType, this.config.networkName)
+            if (isEventInDatabase === true) {
+              this.consoleSubInfo(`${green}Record already exists${end} ✅`)
+              isEventAlreadyInDb = true
+              break
+            }
+
+            // Insert event cause its not present
+            this.consoleSubInfo(`${red}Record not found in db, now adding${end} ❌`)
+            await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
+            this.consoleSubInfo(`${green}Inserted${end} ✅`)
+
+            // Finish
+            console.log('')
+            numberOfAddedEvents++
+            found = true
+          }
+        }
+        // check wantedEvent loop over
+
+        // Its not a wanted event, so skipped
+        if (found === false) {
+          found = false
+          if (isEventAlreadyInDb === false) {
+            this.consoleSubInfo(`${magenta}Skipping${end}`)
+            console.log('')
+            continue
+          }
+          isEventAlreadyInDb = false
+          console.log('')
+        }
+      }
+      this.consoleInfo('INFO: Finished syncing with db')
+      console.log('=================================================================================')
+      this.consoleSubInfo(`${magenta}Inserted ${green}[${numberOfAddedEvents}/${allEvents.length}] ${magenta}events${end}`)
+      console.log('=================================================================================')
+      console.log('')
+      return true
+    }
+    catch (e) {
+      throw new Error(e)
     }
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // MISC: Exit on non-existent cfg file
+  // App Core: Event Listeners Initializer
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  exitIfNoCfgExists = () => {
-    if (this.doesFileExist(this.args[1]) === false) {
-      console.log('ERROR - Can not find specified config file => ' + this.args[1])
-      exit(1)
+  eventsListenter = async () => {
+    this.consoleInfo('INFO: Event Listeners are initializing')
+
+    // Loop each wanted event and listen to it
+    for (const wantedEvent of this.service.contract.wantedEvents.split(', ')) {
+      // Listen to event
+      this.contract.instance.on(wantedEvent, async (...eventArray) => {
+        // Get event position in mixed array
+        const eventPosition = this.findWhereIsEvent(eventArray)
+
+        // Got the event & now get some extra info
+        const event = eventArray[eventPosition]
+        const txBlock = await event.getBlock()
+        const txHash = event.transactionHash
+        const eventType = event.event
+
+        // Reconstruct the event object
+        const rebuiltEvent = this.rebuildEventArguments(event)
+
+        // Insert event
+        const eventData = JSON.stringify(rebuiltEvent)
+        await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
+
+        // Log info
+        console.log('=================================================================================')
+        console.log(`${this.colors.fgMagenta}Processing Event: ${this.colors.fgYellow}${wantedEvent}${this.colors.end}`)
+        console.log('=================================================================================')
+        this.consoleSubInfo('Args: ')
+        console.log(rebuiltEvent)
+        this.consoleSubInfo('Inserted.\n')
+      })
+
+      // Print that we now listen to desired event
+      this.consoleSubInfo(`${this.colors.fgGreen}[UP] ${this.colors.fgYellow}LISTENER - ${wantedEvent}${this.colors.end}`)
     }
   }
 
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // MISC: Do some security checks before starting
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  securityChecksBeforeStart = (numOfArgs) => {
-    this.exitIfNoCorrectNumberOfArguments(numOfArgs)
-    this.exitIfNoCfgExists()
-  }
 
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -145,24 +279,23 @@ class Utils {
   //   | |_| || |_ | || |\__ \
   //    \___/  \__||_||_||___/
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Stylish console.log
+  // UTILS [Console]: Stylish console.log
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   consoleInfo = (messageLog, newLine = false) => {
-    console.log(`${this.colors.fgMagenta}${this.getCurrentDatetTime()}${this.colors.end}`)
-    console.log(`${this.colors.fgBlue}${messageLog}${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}${this.getCurrentDatetTime()}${this.colors.end} ${this.colors.fgMagenta}${messageLog}${this.colors.end}`)
     if (newLine === true) console.log('')
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Stylish console subInfo (=>)
+  // UTILS [Console]: Stylish console subInfo (=>)
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   consoleSubInfo = (messageLog, newLine = false) => {
-    console.log(`${this.colors.fgBlue}=> ${this.colors.end}${messageLog}`)
+    console.log(`${this.colors.fgCyan}=>${this.colors.end} ${messageLog}`)
     if (newLine === true) console.log('')
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Formats datetime from a Date object
+  // UTILS [Datetime]: Formats datetime from a Date object
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getDateDefaultFormat = (dateObj) => {
     const dateStr = `${('' + (dateObj.getFullYear()))}-${('0' + (dateObj.getMonth() + 1)).slice(-2)}-${('0' + dateObj.getDate()).slice(-2)}`
@@ -171,7 +304,7 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Gets current datetime string
+  // UTILS [Datetime]: Gets current datetime string
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getCurrentDatetTime = () => {
     const dateObj = new Date()
@@ -179,7 +312,7 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Formats datetime from a unix timestamp
+  // UTILS [Datetime]: Formats datetime from a unix timestamp
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getDateFromUnixTimestamp = (timestamp) => {
     const dateObj = new Date(timestamp * 1000)
@@ -187,7 +320,7 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Formats datetime from a blockchain event (hex => unix timestamp)
+  // UTILS [Blockchain]: Formats datetime from a blockchain event (hex => unix timestamp)
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getDateTimeFromBlockchainEvent = (hexTimestamp) => {
     const unixTimestamp = this.getIntFromHex(hexTimestamp)
@@ -204,7 +337,7 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Array-Util: checks if item exists in an array
+  // UTILS [Arrays]: checks if item exists in an array
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   doesItemExistInArray = (item, arr) => {
     for (const i in arr) {
@@ -214,7 +347,7 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Counts decimals for ya
+  // UTILS [Numbers]: Counts decimals for ya
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   countDecimals = (value) => {
     if ((value % 1) !== 0) { return value.toString().split('.')[1].length }
@@ -222,7 +355,7 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Format a float string in XDecimals
+  // UTILS [Numbers, Format, Parser]: Format a float string in XDecimals
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   formatXDecimals = (_floatInString, _decimalsToLeave = 2) => {
     // Generate a string that holds N zeroes
@@ -275,7 +408,7 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Check if a file exists given a path
+  // UTILS [FileSystem]: Check if a file exists given a path
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   doesFileExist = (pathToFile) => {
     try {
@@ -286,24 +419,96 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Get Float from Wei Hex (BigNumber)
+  // UTILS [Blockchain]: Get Float from Wei Hex (BigNumber)
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getFloatFromWeiHex = async (hex, decimals) => {
     return parseFloat(ethers.utils.formatEther(hex)).toFixed(decimals)
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Get Integer from Wei Hex (BigNumber)
+  // UTILS [Blockchain]: Get Integer from Wei Hex (BigNumber)
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getIntFromWeiHex = async (hex) => {
     return parseInt(ethers.utils.formatEther(hex))
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // UTILS: Get Integer from Hex (BigNumber)
+  // UTILS [Blockchain]: Get Integer from Hex (BigNumber)
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   getIntFromHex = (hex) => {
     return parseInt(hex)
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS [ProjectGet]: Gets project current selected contract
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  getCurrentService = () => {
+    return this.config.serviceCfg
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS [Console]: Welcome message
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  welcomeMessage = () => {
+    console.log(`${this.colors.fgCyan}===========================================================================================================================================${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}# Welcome to EventsWatcher - Copyright © Anima Studios`)
+    console.log(`${this.colors.fgCyan}===========================================================================================================================================${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) Network Name       => ${this.colors.end}${this.colors.fgYellow}${this.network.name}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgYellow}${this.network.rpc}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) Sel. Service       => ${this.colors.end}${this.colors.fgYellow}${this.service.contract.name}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) MySQL Enviroment   => ${this.colors.end}${this.colors.fgYellow}${this.config.databaseEnv}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) MySQL Table        => ${this.colors.end}${this.colors.fgYellow}${this.db.tableName}${this.colors.end}`)
+    console.log(`${this.colors.fgCyan}===========================================================================================================================================`)
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS [SecurityChecker]: Exit message if bad argumentss
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  exitWithReadme = (errorMsg) => {
+    console.log('##########################################################')
+    console.log(`=> ERROR - ${errorMsg}`)
+    console.log('##########################################################\n')
+    this.consoleSubInfo('USAGE:')
+    console.log('$ node index.js <serviceCfg>')
+    console.log('')
+    this.consoleSubInfo('EXAMPLES:')
+    console.log('$ node index.js ./config/services/BSC_Testnet/MinerBNB.json')
+    console.log('$ node index.js ./config/services/BSC_Testnet/LotteryBNB.json')
+    console.log('')
+    this.consoleSubInfo('DETAILS:')
+    console.log('To be filled')
+    console.log('Soon')
+    console.log('')
+    exit(1)
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS [SecurityChecker]: Exit on bad number of argumentss
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  exitIfNoCorrectNumberOfArguments = (n) => {
+    for (let i = 1; i <= n; i++) {
+      if (this.args[i] === undefined) {
+        this.exitWithReadme(`Bad number of arguments, ${n} required`)
+      }
+    }
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS [SecurityChecker]: Exit on non-existent cfg file
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  exitIfNoCfgExists = () => {
+    if (this.doesFileExist(this.args[1]) === false) {
+      console.log('ERROR - Can not find specified config file => ' + this.args[1])
+      exit(1)
+    }
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // UTILS [SecurityChecker]: Do some security checks before starting
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  securityChecksBeforeStart = (numOfArgs) => {
+    this.exitIfNoCorrectNumberOfArguments(numOfArgs)
+    this.exitIfNoCfgExists()
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -327,162 +532,14 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // CONFIG: Gets project current Network config
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  getNetworkConfig = () => {
-    // Check if network exists in global config and exits if it does not exist
-    if (this.doesItemExistInObject(this.config.networkName, this.config.globalCfg.networks) === false) {
-      console.log(`ERROR: Selected network "${this.config.networkName}" does not exist`)
-      exit(1)
-    }
-
-    // Return exitsing network
-    return this.config.globalCfg.networks[this.config.networkName]
-  }
-
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   // ____  _            _        _           _
   // | __ )| | ___   ___| | _____| |__   __ _(_)_ __
   // |  _ \| |/ _ \ / __| |/ / __| '_ \ / _` | | '_ \
   // | |_) | | (_) | (__|   < (__| | | | (_| | | | | |
   // |____/|_|\___/ \___|_|\_\___|_| |_|\__,_|_|_| |_|
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // BLOCKCHAIN: RPC Node & Contract Setup
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  setupWeb3 = async () => {
-    this.consoleInfo('INFO: Web3 RPC is initializing.', false)
-    try {
-      // Setup JSON RPC Provider
-      this.blockchain = new ethers.providers.JsonRpcProvider(this.network.rpc)
 
-      // Get the instance of the contract
-      this.contract.instance = new ethers.Contract(this.contract.address, this.contract.json.abi, this.blockchain)
 
-      // Connect to contract instance
-      this.contract.instance.connect(this.blockchain)
-      this.consoleSubInfo('Connected successfully\n')
-    }
-    catch (e) {
-      console.log('ERROR while Web3 Setup. Check correct RPC / ABI / Contract Address in configuration\n\n', e); exit(1)
-    }
-    return true
-  }
 
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // BLOCKCHAIN: Loop the blockain by requesting info of 10,000 blocks
-  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  reloadEventsFromBlockchain = async () => {
-    try {
-      this.consoleInfo('INFO: Reloading events from blockchain')
-
-      // Starting block is contract deploy transaction
-      const startBlock = await this.blockchain.send('eth_getTransactionReceipt', [this.contract.deployTx]).then(async (r) => await this.getIntFromHex(r.blockNumber))
-
-      // End block is current block number
-      const endBlock = await this.blockchain.getBlockNumber()
-
-      // Aux Var to temporarily store received events
-      let allEvents = []
-
-      // Log some info
-      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
-      this.consoleSubInfo(`Contract Address: ${this.contract.address}`)
-      this.consoleSubInfo(`TxId: ${this.contract.deployTx}`)
-      this.consoleSubInfo(`Deployed @block: ${startBlock}`)
-      this.consoleSubInfo(`Syncing to @block: ${endBlock}`)
-      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
-
-      // Loop by requesting 10,000 blocks
-      for (let i = startBlock; i < endBlock; i += 10000) {
-        // Relative start & end of block
-        const _startBlock = i
-        const _endBlock = Math.min(endBlock, i + 9999)
-
-        // Calculate % of filled up & log info
-        const percent = parseFloat((endBlock - _startBlock) / endBlock * 100).toFixed(2)
-        this.consoleSubInfo(`${_startBlock}/${endBlock} - ${endBlock - _startBlock} blocks remaining (${parseFloat(100 - percent).toFixed(2)}%)`)
-
-        // Get the important stuff here, all the events br0h.
-        const events = await this.contract.instance.queryFilter('*', _startBlock, _endBlock)
-
-        // Fill up received events to array and keep going!
-        allEvents = [...allEvents, ...events]
-      }
-      this.consoleSubInfo('FINISH')
-      console.log(`${this.colors.fgBlue}-------------------------------------------------------------------------------------------------------------------------------------------`)
-      console.log('')
-
-      // Now loop each received event that is stored in array and insert in db if not present
-      this.consoleInfo(`INFO: Now syncing ${allEvents.length} events with db`)
-      let isEventAlreadyInDb = false
-      let numberOfAddedEvents = 0
-      let i = 1
-      for (const event of allEvents) {
-        let found = false
-        const eventType = event.event
-        console.log('--------------------------------------------------------------------------------')
-        this.consoleSubInfo(`[${i++}/${allEvents.length}] Event: ${eventType}`)
-        console.log('--------------------------------------------------------------------------------')
-        // Now loop again each event, but this time we check against wanted events
-        for (const wantedEvent of this.service.contract.wantedEvents.split(', ')) {
-          // If iterared event is a wanted event...
-          if (eventType === wantedEvent) {
-            // Get useful event information
-            const txHash = event.transactionHash
-            const txBlock = await event.getBlock()
-
-            // Print some info
-            this.consoleSubInfo(`Date: ${await this.getDateTimeFromBlockchainEvent(txBlock.timestamp)} ${txBlock.timestamp}`)
-            this.consoleSubInfo('Args: ')
-
-            // Reconstruct the event object
-            const eventObj = this.rebuildEventArguments(event)
-            console.log(eventObj)
-
-            // Stringify event object into json
-            const eventData = JSON.stringify(eventObj)
-
-            // Check if event is inserted in database
-            const isEventInDatabase = await this.db.isEventInDatabase(txHash, eventType, this.config.networkName)
-            if (isEventInDatabase === true) {
-              this.consoleSubInfo('Record already exists ✅')
-              isEventAlreadyInDb = true
-              break
-            }
-
-            // Insert event cause its not present
-            this.consoleSubInfo('Record not found in db, now adding ❌')
-            await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
-            this.consoleSubInfo('Inserted ✅')
-
-            // Finish
-            console.log('--------------------------------------------------------------------------------')
-            console.log('')
-            numberOfAddedEvents++
-            found = true
-          }
-        }
-        // Its not a wanted event, so skipped
-        if (found === false) {
-          found = false
-          if (isEventAlreadyInDb === false) {
-            this.consoleSubInfo('Skipping')
-            console.log('')
-            continue
-          }
-          isEventAlreadyInDb = false
-          console.log('')
-        }
-      }
-      this.consoleSubInfo('Finished syncing with db')
-      this.consoleSubInfo(`Inserted ${numberOfAddedEvents}/${allEvents.length} events`)
-      console.log('')
-      return true
-    }
-    catch (e) {
-      throw new Error(e)
-    }
-  }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   // BLOCKCHAIN: Finds where is the event when all together
@@ -537,44 +594,19 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  // BLOCKCHAIN: Event Listeners Initializer
+  // BLOCKCHAIN: Gets project current Network config
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-  eventsListenter = async () => {
-    this.consoleInfo('INFO: Event Listeners are initializing')
-
-    // Loop each wanted event and listen to it
-    for (const wantedEvent of this.service.contract.wantedEvents.split(', ')) {
-      // Listen to event
-      this.contract.instance.on(wantedEvent, async (...eventArray) => {
-        // Get event position in mixed array
-        const eventPosition = this.findWhereIsEvent(eventArray)
-
-        // Got the event & now get some extra info
-        const event = eventArray[eventPosition]
-        const txBlock = await event.getBlock()
-        const txHash = event.transactionHash
-        const eventType = event.event
-
-        // Reconstruct the event object
-        const rebuiltEvent = this.rebuildEventArguments(event)
-
-        // Insert event
-        const eventData = JSON.stringify(rebuiltEvent)
-        await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
-
-        // Log info
-        console.log('---------------------------------------------------------------------------------------------------------------')
-        console.log(`(!) ${wantedEvent} Event`)
-        console.log('---------------------------------------------------------------------------------------------------------------')
-        this.consoleSubInfo('Args: ')
-        console.log(rebuiltEvent)
-        this.consoleSubInfo('Inserted.\n')
-      })
-
-      // Print that we now listen to desired event
-      this.consoleSubInfo(`OK - RPC: ${wantedEvent}`)
+  getNetworkConfig = () => {
+    // Check if network exists in global config and exits if it does not exist
+    if (this.doesItemExistInObject(this.config.networkName, this.config.globalCfg.networks) === false) {
+      console.log(`ERROR: Selected network "${this.config.networkName}" does not exist`)
+      exit(1)
     }
+
+    // Return exitsing network
+    return this.config.globalCfg.networks[this.config.networkName]
   }
+
 }
 
 export default Utils

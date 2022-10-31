@@ -11,20 +11,8 @@ const utils = new Utils()
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 async function starter () {
   try {
-    // Welcome message
-    utils.welcomeMessage()
-
-    // Open database
-    await utils.db.openDatabase()
-
     // Setup RPC & Contract
-    await utils.setupWeb3()
-
-    // Reload all events from blockchain 1-by-1 and compare to DB
-    await utils.reloadEventsFromBlockchain()
-
-    // Listen to events
-    await utils.eventsListenter()
+    await utils.runApp()
   }
   catch (e) {
     console.log(e)
