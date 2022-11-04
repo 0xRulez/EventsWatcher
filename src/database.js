@@ -18,7 +18,7 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Creates connection pool & connets to it
+  / Creates connection pool & connets to it
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   openDatabase = async () => {
     try {
@@ -41,12 +41,13 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Test MySQL Connection
+  / Test MySQL Connection
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
   testConnection = async () => {
     try {
-      const [rows] = await this.connector.query('SELECT 1')
-      return rows
+      const conn = await this.connector.getConnection()
+      await conn.query('SELECT 1')
+      conn.release()
     }
     catch (e) {
       this.throwExitError(e)
@@ -54,44 +55,69 @@ class Database {
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Creates a table in current database
+  / Creates a table in current database
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   * @param {string}  tableName    - Table name
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   createTable = async (tableName) => {
-    const [rows] = await this.connector.query('CREATE TABLE ' + tableName + ' (`timestamp` int NULL, `txHash` varchar(255) NULL, `network` varchar(255) NULL, `contractAddr` varchar(255) NULL, `coinName` varchar(30) NULL, `type` varchar(255) NULL, `data` varchar(255) NULL)')
-    const createdTable = rows
-    if (createdTable === 0) return false
-    return true
+    try {
+      // eslint-disable-next-line no-multi-str
+      const tableQuery = 'CREATE TABLE ' + tableName + ' (`timestamp` int DEFAULT NULL,\
+        `txHash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,\
+        `network` varchar(255) DEFAULT NULL,\
+        `contractAddr` varchar(255) DEFAULT NULL,\
+        `coinName` varchar(30) DEFAULT NULL,\
+        `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,\
+        `data` varchar(255) DEFAULT NULL,\
+        PRIMARY KEY (`txHash`,`type`)\
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;'
+      const [rows] = await this.connector.query(tableQuery)
+      const createdTable = rows
+      if (createdTable === 0) return false
+      return true
+    }
+    catch (e) {
+      console.log(e)
+    }
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Checks if table exists
+  / Checks if table exists
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   * @param {string}  tableName    - Table name
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   doesTableExist = async (tableName) => {
-    const [rows] = await this.connector.query('SELECT COUNT(TABLE_NAME) FROM information_schema.TABLES WHERE TABLE_SCHEMA LIKE ? AND TABLE_TYPE LIKE \'BASE TABLE\' AND TABLE_NAME = ?', [this.config.database.name, tableName])
-    const doesTableExist = rows[0]['COUNT(TABLE_NAME)']
-    if (doesTableExist === 0) return false
-    return true
+    try {
+      const [rows] = await this.connector.query('SELECT COUNT(TABLE_NAME) FROM information_schema.TABLES WHERE TABLE_SCHEMA LIKE ? AND TABLE_TYPE LIKE \'BASE TABLE\' AND TABLE_NAME = ?', [this.config.database.name, tableName])
+      const doesTableExist = rows[0]['COUNT(TABLE_NAME)']
+      if (doesTableExist === 0) return false
+      return true
+    }
+    catch (e) {
+      console.log(e)
+    }
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Event Exists
+  / Event Exists
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   * @param {string}  txHash      - Transaction hash
   * @param {string}  eventType   - Event type
   * @param {string}  networkName - Network name
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   isEventInDatabase = async (txHash, eventType, networkName) => {
-    const [rows] = await this.connector.query(`SELECT * FROM ${this.tableName} WHERE txHash = ? AND type = ? AND network = ?`, [txHash, eventType, networkName])
-    if (rows.length === 0) return false
-    return true
+    try {
+      const [rows] = await this.connector.query(`SELECT * FROM ${this.tableName} WHERE txHash = ? AND type = ? AND network = ?`, [txHash, eventType, networkName])
+      if (rows.length === 0) return false
+      return true
+    }
+    catch (e) {
+      console.log(e)
+    }
   }
 
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
-  / DB: Insert Event
+  / Insert Event
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   * @param    {number}  timestamp     - Number
   * @param    {string}  txHash        - Transaction hash
@@ -113,10 +139,17 @@ class Database {
     if (this.config.database.debug === true) console.log('++insertEvent: Inserting... ')
 
     // Insert Event
-    const [rows, fields, affectedRows] = await this.connector.execute(`INSERT INTO ${this.tableName} (timestamp, txHash, network, contractAddr, coinName, type, data) VALUES(?, ?, ?, ?, ?, ? , ?)`, [timestamp, txHash, network, contractAddr, coinName, type, eventData])
-    // Exit process on error
-    // Debug
-    if (this.config.database.debug === true) console.log(rows, fields, affectedRows)
+    try {
+      const [rows, fields, affectedRows] = await this.connector.execute(`INSERT INTO ${this.tableName} (timestamp, txHash, network, contractAddr, coinName, type, data) VALUES(?, ?, ?, ?, ?, ? , ?)`, [timestamp, txHash, network, contractAddr, coinName, type, eventData])
+      // Exit process on error
+      // Debug
+      if (this.config.database.debug === true) console.log(rows, fields, affectedRows)
+
+    }
+    catch (e) {
+      console.log(e)
+    }
+
   }
 }
 
