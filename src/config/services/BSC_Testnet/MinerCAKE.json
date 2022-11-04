@@ -7,8 +7,8 @@
   },
   "contract": {
     "name": "MinerV1ERC20",
-    "address": "0x076E4d0D529790F6c8AEd304A6aa024236e2Cc68",
-    "deployTx": "0x60bf524adbefa58fe6aa496cacf9768140e521c6f26439f9ca6b88e805cdf343",
+    "address": "0x94Fa47f6f512503264A3FcB68EF3c4052d3e8791",
+    "deployTx": "0x274ea3384a9da13700ed363d64f956a9da4c37d838f75701fb43e7491ba815a2",
     "coinName": "CAKE",
     "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
     "formatEther": "_amount, _lotteryValue, _value, _eggsValues",
