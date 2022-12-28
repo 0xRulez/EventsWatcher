@@ -1,5 +1,5 @@
 {
-  "type": "miner",
+  "type": "miners",
   "networkName": "BSC_Testnet",
   "database": {
     "enviroment": "dev",

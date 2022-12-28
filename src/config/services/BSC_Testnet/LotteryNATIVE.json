@@ -1,5 +1,5 @@
 {
-  "type": "lottery",
+  "type": "lotteries",
   "networkName": "BSC_Testnet",
   "database": {
     "enviroment": "dev",
