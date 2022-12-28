@@ -6,6 +6,7 @@
 // |____/   \__,_|  \__|  \__,_| |_.__/   \__,_| |___/  \___|
 
 import mysql from 'mysql2/promise'
+import { exit } from 'process'
 class Database {
   /** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
   / Constructor
@@ -50,7 +51,8 @@ class Database {
       conn.release()
     }
     catch (e) {
-      this.throwExitError(e)
+      console.log(e)
+      exit(1)
     }
   }
 
