@@ -7,8 +7,8 @@
   },
   "contract": {
     "name": "LotteryV1ERC20",
-    "address": "0x31BF417E0524441E1DC9e6da4863028F822438B3",
-    "deployTx": "0x11a709216d1eceaa05c0dd831717f536f11375fd4fa5a82a47580dd7f1f0b8b4",
+    "address": "0x43F73DeEb4961e843327Da5deA1b154ED545a5ca",
+    "deployTx": "0x770e5457cac4760f8e969d65cdf6f1886cf7ae3f8a445ee42ffd9dc524708bbc",
     "coinName": "CAKE",
     "wantedEvents": "purchasedTickets, numberRequested, pickedWinner",
     "formatEther": "_value",

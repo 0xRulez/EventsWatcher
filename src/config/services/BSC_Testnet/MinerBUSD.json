@@ -7,8 +7,8 @@
   },
   "contract": {
     "name": "MinerV1ERC20",
-    "address": "0x85494227299906d8DfeB817865b4f39B2f938854",
-    "deployTx": "0x964fb96eb6e143fbe29199fa16d51c1b5b187bda94363a5d185ed2cd8239b3b0",
+    "address": "0x0B1Aee0fa1FC6dAad2e566b4C98e58402E80DBcc",
+    "deployTx": "0x22d2f31ea80cbe76636b46823bf2f1ceda7ab3c27c4fc39a25cf440b9133d3da",
     "coinName": "BUSD",
     "wantedEvents": "BuyEggs, HatchEggs, SellEggs, ReceivedFromLottery",
     "formatEther": "_amount, _lotteryValue, _value, _eggsValues",
