@@ -1,5 +1,5 @@
 #!/bin/bash
-source ../SPD-Backend/Bash/99_Utils.sh
+source ../SPD-Tools/99_Utils.sh
 APP_GREP_PATTERN="EW"
 APP_ENTRY="EventsWatcher.js"
 APP_NAME="EventsWatcher"
