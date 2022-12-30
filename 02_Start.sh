@@ -45,7 +45,7 @@ fi
 SCREEN_NAME="$APP_GREP_PATTERN-$NETWORK-$SERVICE"
 
 # Resolves to "cd src && node LotteryTimer.js ./config/services/BSC_Testnet/LotteryBNB.json 2>&1 | tee -a ../logs/BSC_Testnet/LotteryBNB.json"
-SERVICE_CMD="cd src && node $APP_ENTRY ./$APP_CONFIG_PATH/$NETWORK/$SERVICE 2>&1 | tee -a ../logs/$NETWORK/$SERVICE.log"
+SERVICE_CMD="cd src && node $APP_ENTRY ./$SERVICES_RELPATH_CONFIG_SERVICES/$NETWORK/$SERVICE 2>&1 | tee -a ../logs/$NETWORK/$SERVICE.log"
 
 # Call startService with required arguments
 startService "$NETWORK" "$SCREEN_NAME" "$SERVICE_CMD" "$APP_ENTRY" "$SERVICE" "return" "$APP_GREP_PATTERN"

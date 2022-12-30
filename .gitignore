@@ -131,3 +131,4 @@ package-lock.json
 deploy.tar
 test01.js
 .gitignore.swp
+src/config
