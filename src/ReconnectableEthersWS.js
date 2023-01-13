@@ -10,7 +10,7 @@ class ReconnectableEthers {
     this._onConnectedCallback = _onConnectedCallback
     this.provider = undefined
     this.config = undefined
-    this.KEEP_ALIVE_CHECK_INTERVAL = 1000
+    this.KEEP_ALIVE_CHECK_INTERVAL = 5000
     this.keepAliveInterval = undefined
     this.pingTimeout = undefined
   }
