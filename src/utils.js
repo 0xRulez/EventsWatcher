@@ -78,7 +78,7 @@ class Utils {
     try {
       // Setup ReconnectableEthers WS Provider
       this.reconnectableEthers = new ReconnectableEthers(this.continueRunApp)
-      this.reconnectableEthers.load({ WS_PROVIDER_ADDRESS: 'wss://aged-delicate-tab.bsc-testnet.discover.quiknode.pro/c0211ae34348ce0c1f022c6bdebe814f3481e66b/' })
+      this.reconnectableEthers.load({ WS_PROVIDER_ADDRESS: this.config.WSS_URL })
     }
     catch (e) {
       console.log('ERROR while Web3 Setup. Check correct RPC / ABI / Contract Address in configuration\n\n', e); exit(1)

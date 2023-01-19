@@ -1,5 +1,6 @@
 /* eslint-disable no-multi-spaces */
 import { createRequire } from 'module'
+import { exit } from 'process'
 const require = createRequire(import.meta.url)
 const globalCfg = require('./config/global.json')
 
@@ -22,10 +23,12 @@ class Configuration {
     // Global & Service
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     this.globalCfg = globalCfg
+
     this.serviceCfg = require(_serviceCfgPath)
     this.databaseEnv = this.serviceCfg.database.enviroment
     this.networkName = this.serviceCfg.networkName
     this.formatEther = this.serviceCfg.contract.formatEther.split(', ')
+    this.WSS_URL = globalCfg.networks[this.networkName].wss
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     // Fill JSON matching selected serviceCfg
