@@ -4,7 +4,8 @@ import { exit } from 'process'
 import { ethers } from 'ethers'
 import Config from './config.js'
 import Database from './database.js'
-import ReconnectableEthers from './ReconnectableEthersWS.js'
+import ReconnectableEthersV2 from './ReconnectableEthersWS_V2.js'
+import { start } from 'repl'
 const requires = createRequire(import.meta.url)
 const fs = requires('fs')
 
@@ -72,17 +73,20 @@ class Utils {
 
     // Open database
     await this.db.openDatabase()
+    this.svcSyncBlock = await this.db.getServiceSyncBlock()
 
     // Open WebSocket
-    this.consoleInfo('INFO: Web3 EthersWS is initializing')
+    this.consoleInfo('INFO: Ethers.JS WebSocket is initializing, please wait...')
     try {
-      // Setup ReconnectableEthers WS Provider
-      this.reconnectableEthers = new ReconnectableEthers(this.continueRunApp)
+
+      this.reconnectableEthers = new ReconnectableEthersV2(this.continueRunApp)
       this.reconnectableEthers.load({ WS_PROVIDER_ADDRESS: this.config.WSS_URL })
+
     }
     catch (e) {
       console.log('ERROR while Web3 Setup. Check correct RPC / ABI / Contract Address in configuration\n\n', e); exit(1)
     }
+
     return true
   }
 
@@ -108,125 +112,149 @@ class Utils {
   }
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  // App Core: Get events since block N
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  getAllEventsSinceBlock = async (_startBlock) => {
+    const yellow = this.colors.fgYellow
+    const magenta = this.colors.fgMagenta
+    const green = this.colors.fgGreen
+    const end = this.colors.end
+    const consoleSubInfo = this.consoleSubInfo
+    const _endBlock = await this.blockchain.getBlockNumber()
+    let allEvents = []
+
+    // Print useful info
+    console.log(`===========================================================================================================================================${end}`)
+    consoleSubInfo(`${magenta}Contract address: ${yellow}${this.contract.address}${end}`)
+    consoleSubInfo(`${magenta}Transaction hash: ${yellow}${this.contract.deployTx}${end}`)
+    consoleSubInfo(`${magenta}DB Sync with block: ${yellow}${this.svcSyncBlock}${end}`)
+    consoleSubInfo(`${magenta}Syncing to block: ${yellow}${_endBlock}${end}`)
+    console.log(`===========================================================================================================================================${end}`)
+
+    // Loop by requesting 10,000 blocks
+    for (let i = _startBlock; i < _endBlock; i += 10000) {
+
+      // Looped start block & looped end block
+      const startBlock = i
+      const endBlock = Math.min(_endBlock, i + 9999)
+
+      // Calculate % of filled up & log info
+      const percent = parseFloat((endBlock - startBlock) / endBlock * 100).toFixed(2)
+      this.consoleSubInfo(`${yellow}${startBlock}/${endBlock} | ${endBlock - startBlock} blocks remaining ${green}(${parseFloat(100 - percent).toFixed(2)}%)${end}`)
+
+      // Get the important stuff here, all the events br0h.
+      // Fill up received events to array and keep going!
+      const events = await this.contract.instance.queryFilter('*', startBlock, endBlock)
+      allEvents = [...allEvents, ...events]
+    }
+    this.consoleSubInfo(`${green}Finished${end}`, true)
+    return allEvents
+  }
+
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   // App Core: Loop the blockain by requesting info of 10,000 blocks
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   reloadEventsFromBlockchain = async () => {
+    // Prepare some useful tools
+    const yellow = this.colors.fgYellow
+    const magenta = this.colors.fgMagenta
+    const green = this.colors.fgGreen
+    const red = this.colors.fgRed
+    const end = this.colors.end
+    const consoleSubInfo = this.consoleSubInfo
+    const consoleInfo = this.consoleInfo
+
+    consoleInfo('INFO: Reloading events from blockchain')
     try {
 
-      // Report to console
-      // Start block is contract's deploy transaction block
-      // End block is current block number
-      this.consoleInfo('INFO: Reloading events from blockchain')
-      const startBlock = await this.blockchain.send('eth_getTransactionReceipt', [this.contract.deployTx]).then(async (r) => await this.getIntFromHex(r.blockNumber))
+      // Case 1. If service didn't sync with DB (first time running) then we use deployed tx to get deployed block and sync from there
+      // Case 2. If service did sync up with DB (second+ time running) then we use that block to sync from there
+      // We always sustract -100 blocks for margin purposes
+      let marginBlocks = 50
+      let startBlock = await this.blockchain.send('eth_getTransactionReceipt', [this.contract.deployTx]).then(async (r) => await this.getIntFromHex(r.blockNumber))
       const endBlock = await this.blockchain.getBlockNumber()
-
-      // Prepare some useful terminal colors
-      // Report to console
-      const yellow = this.colors.fgYellow
-      const magenta = this.colors.fgMagenta
-      const green = this.colors.fgGreen
-      const red = this.colors.fgRed
-      const end = this.colors.end
-      console.log(`===========================================================================================================================================${end}`)
-      this.consoleSubInfo(`${magenta}Contract Address: ${yellow}${this.contract.address}${end}`)
-      this.consoleSubInfo(`${magenta}TxId: ${yellow}${this.contract.deployTx}${end}`)
-      this.consoleSubInfo(`${magenta}Deployed @block: ${yellow}${startBlock}${end}`)
-      this.consoleSubInfo(`${magenta}Syncing to @block: ${yellow}${endBlock}${end}`)
-      console.log(`===========================================================================================================================================${end}`)
-
-      // Aux Var to temporarily store received events
-      // Loop by requesting 10,000 blocks
-      let allEvents = []
-      for (let i = startBlock; i < endBlock; i += 10000) {
-        // Relative start & end of block
-        const _startBlock = i
-        const _endBlock = Math.min(endBlock, i + 9999)
-
-        // Calculate % of filled up & log info
-        const percent = parseFloat((endBlock - _startBlock) / endBlock * 100).toFixed(2)
-        this.consoleSubInfo(`${yellow}${_startBlock}/${endBlock} | ${endBlock - _startBlock} blocks remaining ${green}(${parseFloat(100 - percent).toFixed(2)}%)${end}`)
-
-        // Get the important stuff here, all the events br0h.
-        const events = await this.contract.instance.queryFilter('*', _startBlock, _endBlock)
-
-        // Fill up received events to array and keep going!
-        allEvents = [...allEvents, ...events]
+      if (this.svcSyncBlock === false) {
+        consoleSubInfo('Service not in sync with db, first time running')
+        this.svcSyncBlock = startBlock
+        marginBlocks = 0
       }
-      this.consoleSubInfo(`${green}Finished${end}`)
-      console.log('')
+      startBlock = this.svcSyncBlock - marginBlocks
+      const allEvents = await this.getAllEventsSinceBlock(startBlock)
 
-      // Now loop each received event that is stored in array and insert in db if not present
-      this.consoleInfo(`INFO: Now syncing ${green}[${allEvents.length} events] ${magenta}with DB`)
-      let isEventAlreadyInDb = false
+      // Now loop each received event that is stored in array and insert in DB if not present
+      consoleInfo(`INFO: Now syncing ${green}[${allEvents.length} events] ${magenta}with DB`)
       let numberOfAddedEvents = 0
       let i = 1
+
       for (const event of allEvents) {
-        let found = false
+        let isWantedEvent = false
         const eventType = event.event
+
         console.log('=================================================================================')
-        this.consoleSubInfo(`${green}[${i++}/${allEvents.length}] ${magenta}Processing Event: ${yellow}${eventType}${end}`)
+        consoleSubInfo(`${green}[${i++}/${allEvents.length}] ${magenta}Processing Event: ${yellow}${eventType}${end}`)
         console.log('=================================================================================')
+
         // Now loop again each event, but this time we check against wanted events
         for (const wantedEvent of this.service.contract.wantedEvents.split(', ')) {
+
           // If iterared event is a wanted event...
           if (eventType === wantedEvent) {
+
             // Get useful event information
             const txHash = event.transactionHash
             const txBlock = await event.getBlock()
-
-            // Print some info
-            this.consoleSubInfo(`${magenta}Date: ${yellow}${await this.getDateTimeFromBlockchainEvent(txBlock.timestamp)} ${txBlock.timestamp}${end}`)
-            this.consoleSubInfo(`${magenta}Args: ${end}`)
+            consoleSubInfo(`${magenta}Date: ${yellow}${await this.getDateTimeFromBlockchainEvent(txBlock.timestamp)} ${txBlock.timestamp}${end}`)
+            consoleSubInfo(`${magenta}Args: ${end}`)
 
             // Reconstruct the event object
             const eventObj = this.rebuildEventArguments(event)
             console.log(eventObj)
 
-            // Stringify event object into json
-            const eventData = JSON.stringify(eventObj)
-
             // Check if event is inserted in database
             const isEventInDatabase = await this.db.isEventInDatabase(txHash, eventType, this.config.networkName)
             if (isEventInDatabase === true) {
-              this.consoleSubInfo(`${green}Record already exists${end} ✅`)
-              isEventAlreadyInDb = true
+              consoleSubInfo(`${green}Record already exists${end} ✅`)
               break
             }
 
             // Insert event cause its not present
-            this.consoleSubInfo(`${red}Record not found in db, now adding${end} ❌`)
+            consoleSubInfo(`${red}Record not found in db, now adding${end} ❌`)
+            const eventData = JSON.stringify(eventObj)
             await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
-            this.consoleSubInfo(`${green}Inserted${end} ✅`)
+            consoleSubInfo(`${green}Inserted${end} ✅`, true)
 
-            // Finish
-            console.log('')
+            // Finish adding event
             numberOfAddedEvents++
-            found = true
+            isWantedEvent = true
           }
-        }
-        // check wantedEvent loop over
 
-        // Its not a wanted event, so skipped
-        if (found === false) {
-          found = false
-          if (isEventAlreadyInDb === false) {
-            this.consoleSubInfo(`${magenta}Skipping${end}`)
-            console.log('')
-            continue
-          }
-          isEventAlreadyInDb = false
-          console.log('')
         }
+
+        // Its not a wanted event so skipped
+        if (isWantedEvent === false) {
+          consoleSubInfo(`${magenta}Skipping${end}`)
+          console.log('')
+          continue
+        }
+
       }
-      this.consoleInfo('INFO: Finished syncing with db')
-      console.log('=================================================================================')
-      this.consoleSubInfo(`${magenta}Inserted ${green}[${numberOfAddedEvents}/${allEvents.length}] ${magenta}events${end}`)
-      console.log('=================================================================================')
-      console.log('')
+
+      // Report to console that db is now in sync & how many events added
+      consoleInfo('INFO: Finished syncing with db')
+      consoleSubInfo(`${magenta}Inserted ${green}[${numberOfAddedEvents}/${allEvents.length}] ${magenta}events${end}`)
+
+      // Update SVC sync'd block in DB
+      if (await this.db.updateServiceSyncBlock(endBlock) === true) {
+        consoleSubInfo('DB is now in sync until block: ' + endBlock + '')
+      }
+
       return true
     }
     catch (e) {
       throw new Error(e)
+    }
+    finally {
+      console.log('')
     }
   }
 
@@ -238,12 +266,13 @@ class Utils {
 
     // Loop each wanted event and listen to it
     for (const wantedEvent of this.service.contract.wantedEvents.split(', ')) {
+
       // Listen to event
       this.contract.instance.on(wantedEvent, async (...eventArray) => {
-        // Get event position in mixed array
-        const eventPosition = this.findWhereIsEvent(eventArray)
 
+        // Get event position in mixed array
         // Got the event & now get some extra info
+        const eventPosition = this.findWhereIsEvent(eventArray)
         const event = eventArray[eventPosition]
         const txBlock = await event.getBlock()
         const txHash = event.transactionHash
@@ -251,26 +280,28 @@ class Utils {
 
         // Reconstruct the event object
         const rebuiltEvent = this.rebuildEventArguments(event)
-
-        // Insert event
         const eventData = JSON.stringify(rebuiltEvent)
-        await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
 
         // Log info
+        const insertedEvent = await this.db.insertEvent(txBlock.timestamp, txHash, this.config.networkName, this.service.contract.address, this.service.contract.coinName, eventType, eventData)
         console.log('=================================================================================')
-        console.log(`${this.colors.fgMagenta}Processing Event: ${this.colors.fgYellow}${wantedEvent}${this.colors.end}`)
+        this.consoleInfo(`INFO: Received Event: ${this.colors.fgYellow}${wantedEvent}${this.colors.end}`)
         console.log('=================================================================================')
-        this.consoleSubInfo('Args: ')
-        console.log(rebuiltEvent)
-        this.consoleSubInfo('Inserted.\n')
+        this.consoleSubInfo('TxHash: ' + txHash)
+        this.consoleSubInfo('Args: '); console.log(rebuiltEvent)
+        if (insertedEvent === true) {
+          this.consoleSubInfo('Inserted.\n')
+        }
+        else {
+          console.log(e)
+        }
       })
 
       // Print that we now listen to desired event
       this.consoleSubInfo(`${this.colors.fgGreen}[UP] ${this.colors.fgYellow}LISTENER - ${wantedEvent}${this.colors.end}`)
     }
+    console.log('')
   }
-
-
 
   // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   //    _   _  _    _  _
@@ -457,7 +488,7 @@ class Utils {
     console.log(`${this.colors.fgGreen}(#) RPC Node           => ${this.colors.end}${this.colors.fgYellow}${this.network.rpc}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) Sel. Service       => ${this.colors.end}${this.colors.fgYellow}${this.service.contract.name}${this.colors.end}`)
     console.log(`${this.colors.fgGreen}(#) MySQL Enviroment   => ${this.colors.end}${this.colors.fgYellow}${this.config.databaseEnv}${this.colors.end}`)
-    console.log(`${this.colors.fgGreen}(#) MySQL Table        => ${this.colors.end}${this.colors.fgYellow}${this.db.tableName}${this.colors.end}`)
+    console.log(`${this.colors.fgGreen}(#) MySQL Table        => ${this.colors.end}${this.colors.fgYellow}${this.db.svcEventsTable}${this.colors.end}`)
     console.log(`${this.colors.fgCyan}===========================================================================================================================================`)
   }
 
