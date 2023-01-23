@@ -90,12 +90,12 @@ class ReconnectableEthersV2 {
      * Clear the interval
      */
   onWsPong (event) {
-    if (this.pingTesterCount > 0) {
-      // console.log('DEBUG: Received pong from WS')
-      clearTimeout(this.pingTimeout)
-    }
+    // if (this.pingTesterCount > 0) {
+    // console.log('DEBUG: Received pong from WS')
 
-    this.pingTesterCount = this.pingTesterCount + 1
+    // }
+    clearTimeout(this.pingTimeout)
+    // this.pingTesterCount = this.pingTesterCount + 1
   }
 }
 export default ReconnectableEthersV2
